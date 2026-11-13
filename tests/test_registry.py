@@ -6,11 +6,13 @@ silently degrades every prediction in production.
 
 from __future__ import annotations
 
-import json
-
 import pytest
 
 from newsclass.registry import ModelRegistry, RegistryError
+
+# Reuse conftest's scratch-directory helper (it does not rely on pytest's
+# tmp_path machinery; see the note in conftest.py).
+from conftest import _fresh_case_dir, _remove_quietly
 
 
 class TestMetadataLoading:
@@ -31,9 +33,13 @@ class TestMetadataLoading:
         registry = ModelRegistry(artifacts_dir)  # must not raise
         assert registry.labels  # fell back to defaults
 
-    def test_missing_artifacts_dir_is_tolerated(self, tmp_path):
-        registry = ModelRegistry(tmp_path / "does-not-exist")
-        assert registry.available_tiers() == []
+    def test_missing_artifacts_dir_is_tolerated(self):
+        case = _fresh_case_dir()
+        try:
+            registry = ModelRegistry(case / "does-not-exist")
+            assert registry.available_tiers() == []
+        finally:
+            _remove_quietly(case)
 
 
 class TestAvailability:
@@ -71,10 +77,14 @@ class TestRouting:
         assert reason is not None
         assert "gold" in reason
 
-    def test_raises_when_nothing_available(self, tmp_path):
-        registry = ModelRegistry(tmp_path / "none")
-        with pytest.raises(RegistryError):
-            registry.resolve("gold", "gold")
+    def test_raises_when_nothing_available(self):
+        case = _fresh_case_dir()
+        try:
+            registry = ModelRegistry(case / "none")
+            with pytest.raises(RegistryError):
+                registry.resolve("gold", "gold")
+        finally:
+            _remove_quietly(case)
 
     def test_caches_loaded_instance(self, artifacts_dir):
         registry = ModelRegistry(artifacts_dir)

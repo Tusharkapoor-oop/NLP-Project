@@ -42,6 +42,17 @@ serving, observability and testing.
 - Typed configuration via `pydantic-settings`; nothing hard-coded.
 - Shared preprocessing module to eliminate training/serving skew.
 
+**Robustness**
+
+- Test suite no longer depends on pytest's `tmp_path` machinery. Its numbered-dir
+  factory garbage-collects scratch trees at fixture setup, which restricted
+  environments (CI sandboxes, locked-down lab machines) refuse — every
+  fixture-based test then died with a misleading `Access is denied` before the
+  test code even ran. Fixtures now create scratch directories directly inside
+  the project and clean up on teardown.
+- `scripts/run_tests.py` added: a thin wrapper giving each run a fresh scratch
+  directory and passing any pytest flags through. CI uses it too.
+
 **Notebooks**
 - `Word2Vec_LSTM_NLP_Classification.ipynb` — classical pipeline (AG News).
 - `Transformer_DistilBERT_NLP_Classification.ipynb` — Transformer pipeline (BBC News).

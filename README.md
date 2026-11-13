@@ -74,13 +74,22 @@ points, and the choice is an explicit, measurable trade-off.
 
 | Tier | Model | Accuracy | Macro-F1 | Size | Latency | Train (CPU) | Use when |
 |---|---|---|---|---|---|---|---|
-| **Bronze** | TF-IDF + Logistic Regression | 0.901 | 0.901 | 0.8 MB | 22 ms / 100 docs | ~20 s | High volume, cost-sensitive, no PyTorch runtime needed |
-| **Silver** | Word2Vec (CBOW) + BiLSTM | 0.898 | 0.899 | 9 MB | 2550 ms / 100 docs | ~7 min | You want learned embeddings and sequence modelling on CPU |
-| **Gold** | Fine-tuned DistilBERT | 0.91 | 0.91 | ~255 MB | heaviest | ~40 min | Accuracy matters more than latency or memory |
+| **Bronze** | TF-IDF + Logistic Regression | 0.901 | 0.901 | 0.8 MB | 30 ms / 100 docs | ~20 s | High volume, cost-sensitive, no PyTorch runtime needed |
+| **Silver** | Word2Vec (CBOW) + BiLSTM | 0.898 | 0.899 | 9 MB | 1465 ms / 100 docs | ~7 min | You want learned embeddings and sequence modelling on CPU |
+| **Gold** | Fine-tuned DistilBERT | 0.918 | 0.918 | 269 MB | 22501 ms / 100 docs | ~88 min | Accuracy matters more than latency or memory |
 
-Latency figures are measured by `scripts/evaluate.py` on the full 2,000-document
-test set. Note how much slower the BiLSTM is than TF-IDF — a real cost, not a
-theoretical one. That is exactly why a tier ladder exists instead of one model.
+All figures are produced by `python scripts/evaluate.py` on the full 2,000-document
+test set — regenerate them yourself with that one command. Three honest readings of
+this table are worth stating out loud:
+
+* **Gold buys ~1.7 accuracy points over bronze** at 335× the size and ~750× the
+  latency. Whether that trade is worth it is a business decision, which is the
+  whole point of routing by tier.
+* **Silver is not strictly between its neighbours.** It is *slower* than bronze yet
+  no more accurate on this dataset — sequence modelling pays off on longer, more
+  nuanced documents, and AG News headlines are short and keyword-rich.
+* **Latency scales with cost** far more sharply than accuracy does on CPU. A
+  request routed to gold takes ~225 ms; the same request to bronze takes ~0.3 ms.
 
 > **Actively measured numbers, not marketing.** `artifacts/registry.json` holds the
 > exact figures produced by the training runs on this machine. Regenerate with

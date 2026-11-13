@@ -17,6 +17,9 @@ __pycache__/
 torchinductor_*/
 tmphsb14cm__kernels/
 .pytest-of-*/
+# Test scratch directories created per run by scripts/run_tests.py
+.pytest_runs/
+pytest-of-*/
 pytest-of-*/
 pip-unpack-*/
 tmp*/

@@ -29,9 +29,3 @@ ignore = ["E501"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-# tmp_path fixtures run inside the project folder instead of the system temp.
-# Keeps test runs self-contained, including on machines where the user temp
-# directory is restricted (corporate lockdowns, sandboxed CI, shared labs).
-addopts = "--basetemp=.pytest_tmp"
-# Cache lives in the project too; avoids permission issues with a stale cache.
-cache_dir = ".pytest_cache_v2"

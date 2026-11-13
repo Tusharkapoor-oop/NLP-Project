@@ -46,8 +46,8 @@ export PYTHONPATH=src          # bash
 Run these before every commit. CI enforces the same set.
 
 ```bash
-pytest -q                      # 73 tests
-ruff check src tests scripts   # lint
+python scripts/run_tests.py           # 73 tests (self-contained temp dirs)
+ruff check src tests scripts          # lint
 python scripts/evaluate.py --gate 0.85
 ```
 
