@@ -1,0 +1,37 @@
+[project]
+name = "newsclass"
+version = "1.0.0"
+description = "Enterprise news topic classification with bronze/silver/gold model tiers"
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+serve = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "pydantic-settings>=2.0",
+    "prometheus-client>=0.19",
+    "pyyaml>=6.0",
+]
+dev = [
+    "pytest>=8.0",
+    "httpx>=0.27",
+    "ruff>=0.4",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+# tmp_path fixtures run inside the project folder instead of the system temp.
+# Keeps test runs self-contained, including on machines where the user temp
+# directory is restricted (corporate lockdowns, sandboxed CI, shared labs).
+addopts = "--basetemp=.pytest_tmp"
+# Cache lives in the project too; avoids permission issues with a stale cache.
+cache_dir = ".pytest_cache_v2"

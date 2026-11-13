@@ -1,0 +1,14 @@
+{
+  "tier": "bronze",
+  "model_name": "tfidf+logreg",
+  "model_version": "1.0.0",
+  "accuracy": 0.895,
+  "macro_f1": 0.8944,
+  "train_seconds": 21.3,
+  "inference_ms_per_100": 8.26,
+  "size_mb": 0.83,
+  "n_train": 16000,
+  "n_test": 2000,
+  "trained_at": "2026-11-12T06:27:41+00:00",
+  "notes": "No PyTorch. Cheapest tier; strong baseline on short news text."
+}

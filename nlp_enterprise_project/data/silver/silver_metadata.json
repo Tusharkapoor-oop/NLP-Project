@@ -1,0 +1,13 @@
+{
+  "num_rows": 2225,
+  "vocab_size_approx": 27738,
+  "max_raw_len": 4492,
+  "max_clean_len": 2199,
+  "label_dist": {
+    "sport": 511,
+    "business": 510,
+    "politics": 417,
+    "tech": 401,
+    "entertainment": 386
+  }
+}

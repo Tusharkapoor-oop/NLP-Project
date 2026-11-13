@@ -1,0 +1,14 @@
+{
+  "tier": "silver",
+  "model_name": "word2vec-cbow+bilstm",
+  "model_version": "1.0.0",
+  "accuracy": 0.8915,
+  "macro_f1": 0.8911,
+  "train_seconds": 424.8,
+  "inference_ms_per_100": 84.24,
+  "size_mb": 9.17,
+  "n_train": 16000,
+  "n_test": 2000,
+  "trained_at": "2026-11-12T06:35:16+00:00",
+  "notes": "Own embeddings trained on the training split only (no leakage)."
+}

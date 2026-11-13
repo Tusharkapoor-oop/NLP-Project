@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-13T06:00:57+00:00",
+  "labels": [
+    "World",
+    "Sports",
+    "Business",
+    "Sci/Tech"
+  ],
+  "dataset": {
+    "name": "SetFit/ag_news",
+    "train_rows": 20000
+  },
+  "environment": {
+    "python": "3.13.15",
+    "platform": "Windows-11-10.0.26300-SP0"
+  },
+  "tiers": {
+    "bronze": {
+      "tier": "bronze",
+      "model_name": "tfidf+logreg",
+      "model_version": "1.0.0",
+      "accuracy": 0.895,
+      "macro_f1": 0.8944,
+      "train_seconds": 21.3,
+      "inference_ms_per_100": 8.26,
+      "size_mb": 0.83,
+      "n_train": 16000,
+      "n_test": 2000,
+      "trained_at": "2026-11-12T06:27:41+00:00",
+      "notes": "No PyTorch. Cheapest tier; strong baseline on short news text."
+    },
+    "silver": {
+      "tier": "silver",
+      "model_name": "word2vec-cbow+bilstm",
+      "model_version": "1.0.0",
+      "accuracy": 0.8915,
+      "macro_f1": 0.8911,
+      "train_seconds": 424.8,
+      "inference_ms_per_100": 84.24,
+      "size_mb": 9.17,
+      "n_train": 16000,
+      "n_test": 2000,
+      "trained_at": "2026-11-12T06:35:16+00:00",
+      "notes": "Own embeddings trained on the training split only (no leakage)."
+    },
+    "gold": {
+      "tier": "gold",
+      "model_name": "distilbert-base-uncased",
+      "model_version": "1.0.0",
+      "accuracy": 0.8767,
+      "macro_f1": 0.8762,
+      "train_seconds": 1486.5,
+      "inference_ms_per_100": 7102.58,
+      "size_mb": 268.56,
+      "n_train": 2400,
+      "n_test": 300,
+      "trained_at": "2026-11-13T06:00:57+00:00",
+      "notes": "Fine-tuned 1 epochs, max_length=96."
+    }
+  }
+}

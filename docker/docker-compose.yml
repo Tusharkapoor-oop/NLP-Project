@@ -1,0 +1,76 @@
+# ---------------------------------------------------------------------------
+# Local/self-hosted deployment stack.
+#
+#   docker compose -f docker/docker-compose.yml up --build
+#
+# Then:  API  http://localhost:8000/docs
+#        Prometheus  http://localhost:9090
+#        Grafana     http://localhost:3000   (admin / admin)
+# ---------------------------------------------------------------------------
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: newsclass:1.0.0
+    container_name: newsclass-api
+    ports:
+      - "8000:8000"
+    environment:
+      NEWSCLASS_ENVIRONMENT: prod
+      NEWSCLASS_DEFAULT_TIER: ${NEWSCLASS_DEFAULT_TIER:-gold}
+      NEWSCLASS_LOG_LEVEL: INFO
+      NEWSCLASS_MAX_BATCH_SIZE: "64"
+      # Docs off in prod by default; flip to true for a demo.
+      NEWSCLASS_DOCS_ENABLED: "true"
+      NEWSCLASS_REQUIRE_DEFAULT_TIER: "false"
+    volumes:
+      # Serve a different model set without rebuilding the image.
+      - ../artifacts:/app/artifacts:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/readyz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 4G
+        reservations:
+          memory: 1G
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: newsclass-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: newsclass-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      # Anonymous read access makes the demo clickable without a login.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped

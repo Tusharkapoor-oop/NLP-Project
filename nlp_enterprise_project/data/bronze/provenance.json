@@ -1,0 +1,16 @@
+{
+  "dataset": "SetFit/bbc-news",
+  "splits": [
+    "train",
+    "test"
+  ],
+  "num_rows": {
+    "train": 1225,
+    "test": 1000
+  },
+  "files": {
+    "train": "C:\\Users\\ACER\\Downloads\\nlp project\\nlp_enterprise_project\\data\\bronze\\train.jsonl",
+    "test": "C:\\Users\\ACER\\Downloads\\nlp project\\nlp_enterprise_project\\data\\bronze\\test.jsonl"
+  },
+  "source": "Hugging Face"
+}

@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+.nlp_env/
+*.egg-info/
+.pytest_cache/
+.pytest_cache*/
+.pytest_tmp/
+.ruff_cache/
+.mypy_cache/
+
+# Data / model caches (large, regenerable)
+.hf_cache/
+.nltk_data/
+torchinductor_*/
+tmphsb14cm__kernels/
+.pytest-of-*/
+pytest-of-*/
+pip-unpack-*/
+tmp*/
+*.log
+
+# Local scratch scripts
+fix*.py
+t_check.py
+
+# Trained artifacts: keep the registry + small models, ignore the big ones.
+# The DistilBERT weights are 250 MB+ so they are not committed to git.
+artifacts/gold/
+artifacts/*/_trainer/
+*.safetensors
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Local config
+.env
+
+# OS
+.DS_Store
+Thumbs.db
