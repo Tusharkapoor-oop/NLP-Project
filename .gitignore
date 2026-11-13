@@ -41,3 +41,4 @@ artifacts/*/_trainer/
 # OS
 .DS_Store
 Thumbs.db
+.acl_recovery/
