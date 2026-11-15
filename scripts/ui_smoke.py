@@ -253,6 +253,70 @@ def run(base_url: str, shots: Path | None) -> int:
             shot(name, settle_ms=350)
         shot("ui", settle_ms=350)
 
+        # --- model lab --------------------------------------------------------
+        lab = browser.new_page(viewport={"width": 1440, "height": 960}, device_scale_factor=1)
+        lab.on(
+            "console",
+            lambda msg: (
+                report.console.append(f"lab console: {msg.text}") if msg.type == "error" else None
+            ),
+        )
+        lab.on("pageerror", lambda exc: report.console.append(f"lab pageerror: {exc}"))
+        lab.on(
+            "response",
+            lambda resp: (
+                report.fail(f"lab HTTP {resp.status} {resp.url}") if resp.status >= 400 else None
+            ),
+        )
+        lab.goto(f"{base_url}/lab", wait_until="networkidle", timeout=60_000)
+        lab.wait_for_selector('.lab-model[data-tier="bronze"]', timeout=30_000)
+        cards = lab.locator(".lab-model").count()
+        print(f"lab       : {cards} model cards, {len(ready)} ready")
+        if cards != len(catalogue):
+            report.fail(f"lab renders {cards} cards for {len(catalogue)} tiers")
+        if not ready:
+            report.fail("no desk is ready, so the lab cannot be exercised")
+        else:
+            lab.click("#lab-run-all")
+            lab.wait_for_function(
+                "() => document.querySelectorAll('.lab-model[data-state=\"done\"]').length"
+                f" >= {len(ready)}",
+                timeout=180_000,
+            )
+            labels = [
+                item.strip()
+                for item in lab.locator(
+                    '.lab-model[data-state="done"] .lab-label'
+                ).all_inner_texts()
+            ]
+            summary = lab.locator("#sum-agreement").inner_text()
+            bars = lab.locator('.lab-model[data-state="done"] .bar').count()
+            print(f"lab labels: {' | '.join(labels)}")
+            print(f"lab agree : {summary}")
+            if len(labels) != len(ready):
+                report.fail(f"lab produced {len(labels)} labels for {len(ready)} ready desks")
+            if any(label == "No run yet" for label in labels):
+                report.fail("a desk finished without a label")
+            if not summary or summary == "—":
+                report.fail("lab summary did not update after the run")
+            if bars < 4 * len(ready):
+                report.fail(f"lab rendered {bars} bars for {len(ready)} desks")
+
+            lab.locator('.lab-model[data-state="done"] [data-role="explain"]').first.click()
+            lab.wait_for_selector(".lab-model .token-pill", timeout=120_000)
+            tokens = lab.locator(".lab-model .token-pill").count()
+            print(f"lab tokens: {tokens}")
+            if tokens < 1:
+                report.fail("the lab explanation rendered no tokens")
+
+        lab.set_viewport_size({"width": 390, "height": 844})
+        lab.wait_for_timeout(400)
+        overflow = lab.evaluate("() => document.documentElement.scrollWidth - window.innerWidth")
+        print(f"lab mobile: overflow={overflow}px")
+        if overflow > 1:
+            report.fail(f"the lab overflows a 390px viewport by {overflow}px")
+        lab.close()
+
         # --- mobile ----------------------------------------------------------
         mobile = browser.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=1)
         mobile.goto(base_url, wait_until="networkidle", timeout=60_000)

@@ -256,7 +256,7 @@
 }
 
 .lab-model[data-state="done"] {
-  border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  border-color: var(--accent-2);
 }
 
 .lab-model[data-state="error"] {
@@ -346,6 +346,8 @@
 
 .lab-model .bars {
   gap: 0.42rem;
+  min-height: 92px;
+  align-content: start;
 }
 
 .lab-model .bar-top {
@@ -420,7 +422,7 @@
 
 .lab-explain-close {
   border: 0;
-  background:none;
+  background: none;
   color: var(--dimmer);
   font-family: var(--mono);
   font-size: 0.58rem;

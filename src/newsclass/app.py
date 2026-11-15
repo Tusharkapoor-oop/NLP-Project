@@ -583,9 +583,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lab = STATIC_DIR / "lab.html"
         if lab.exists():
             return FileResponse(lab)
-        return JSONResponse(
-            {"detail": "the model lab is not installed"}, status_code=404
-        )
+        return JSONResponse({"detail": "the model lab is not installed"}, status_code=404)
 
     # Vendored animation libraries, served locally so the UI is fully offline.
     app.mount(

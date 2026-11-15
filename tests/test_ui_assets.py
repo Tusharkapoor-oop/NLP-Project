@@ -68,3 +68,37 @@ class TestServedAssets:
 
     def test_missing_asset_is_a_clean_404(self, client):
         assert client.get("/static/assets/does-not-exist.js").status_code == 404
+
+
+class TestModelLab:
+    """The lab is a second page, but it ships under the same offline contract."""
+
+    def test_lab_page_is_served(self, client):
+        response = client.get("/lab")
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]
+        assert "Model Lab" in response.text
+
+    def test_lab_links_only_local_assets(self, client):
+        page = client.get("/lab").text
+        assert 'href="/static/assets/styles.css"' in page
+        assert 'href="/static/assets/lab.css"' in page
+        assert 'src="/static/assets/lab.js"' in page
+        for marker in ("cdn.jsdelivr", "unpkg.com", "cdnjs", "esm.sh"):
+            assert marker not in page, f"the lab still loads {marker}"
+
+    def test_lab_assets_are_served(self, client):
+        css = client.get("/static/assets/lab.css")
+        js = client.get("/static/assets/lab.js")
+        assert css.status_code == 200
+        assert "text/css" in css.headers["content-type"]
+        assert js.status_code == 200
+        assert "javascript" in js.headers["content-type"]
+
+    def test_lab_script_tests_each_tier_independently(self, client):
+        js = client.get("/static/assets/lab.js").text
+        for tier in ("bronze", "silver", "gold"):
+            assert tier in js, f"the lab script never mentions {tier}"
+        assert "/v1/predict" in js, "the lab must call predict"
+        assert "/v1/explain" in js, "the lab must call explain"
+        assert "tier" in js, "the lab must request a tier override"

@@ -50,5 +50,10 @@ Thumbs.db
 .agents/
 .agent/
 
+# Freebuff local project state (do not commit)
+.freebuff/
+*freebuff*
+
 # Runtime interaction data (not a model artifact)
 artifacts/feedback.jsonl
+

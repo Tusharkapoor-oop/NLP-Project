@@ -127,6 +127,16 @@ def main() -> int:
         response = client.get("/static/assets/styles.css")
         check(response.status_code == 200, "UI stylesheet is served")
 
+        # --- the model lab ---
+        response = client.get("/lab")
+        check(response.status_code == 200, "GET /lab returns the model lab")
+        check("Model Lab" in response.text, "lab markup is present")
+        response = client.get("/static/assets/lab.js")
+        check(response.status_code == 200, "lab script is served")
+        check("/v1/predict" in response.text, "lab script calls the prediction API")
+        response = client.get("/static/assets/lab.css")
+        check(response.status_code == 200, "lab stylesheet is served")
+
         # --- consistency across tiers ---
         ready_tiers = {t["tier"] for t in tiers if t["ready"]}
         for candidate in ("bronze", "silver", "gold"):

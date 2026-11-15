@@ -18,7 +18,7 @@ Routing is by `NEWSCLASS_DEFAULT_TIER`. A caller may request a tier only when
 
 A tier may not serve production traffic until **all** of the following hold:
 
-1. `python scripts/run_tests.py` passes in full (97+ tests).
+1. `python scripts/run_tests.py` passes in full (101+ tests).
 2. `python scripts/evaluate.py --tier <t> --gate 0.85` passes on the held-out
    test set.
 3. `python scripts/accuracy_report.py --tier <t>` passes: accuracy and macro-F1

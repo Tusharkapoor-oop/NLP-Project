@@ -366,7 +366,9 @@
   function initNav() {
     const nav = $("nav");
     const bar = $("scroll-progress");
-    const links = $$(".nav-links a");
+    // Only in-page anchors: the nav also links to /lab, which is a route,
+    // not a selector. Passing it to querySelector would throw and abort init.
+    const links = $$('.nav-links a[href^="#"]');
     const sections = links
       .map((a) => document.querySelector(a.getAttribute("href")))
       .filter(Boolean);

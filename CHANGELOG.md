@@ -20,6 +20,9 @@ that states its own calibration and failure modes.
   `/v1/feedback`.
 - Live signals panel fed by `/v1/insights`: label mix, p50/p95 latency,
   confidence drift, tier usage and recent volume.
+- `GET /lab` serves a standalone Model Lab: every tier runs independently on the
+  same copy, each with its own label, full probability distribution, server and
+  round-trip latency, explanation and a named fallback when one answered instead.
 - Defensive behaviour: reduced-motion support, mobile layout, escaped user text,
   request timeouts, a failure toast, and a preloader that always dismisses.
 
@@ -50,8 +53,8 @@ that states its own calibration and failure modes.
   package install.
 
 **Verification**
-- 97 automated tests, including the explanation, feedback, insights, validation
-  and shipped-UI contracts; the smoke test now drives every endpoint.
+- 101 automated tests, including the explanation, feedback, insights, validation,
+  Model Lab and shipped-UI contracts; the smoke test now drives every endpoint.
 
 ### Fixed
 

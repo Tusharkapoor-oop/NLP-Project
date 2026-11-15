@@ -72,7 +72,7 @@ docker compose -f docker/docker-compose.yml up --build
 
 ---
 
-## The web UI ("Wire Desk")
+## The web UI ("Wire Desk" + "Model Lab")
 
 `GET /` serves a self-contained newsroom interface, not a Swagger page.
 
@@ -84,6 +84,7 @@ docker compose -f docker/docker-compose.yml up --build
 | Model evidence, not just a label | **Explain** calls `/v1/explain` and shows per-token contributions (exact coefficient × TF-IDF for bronze, gradient×input for the neural tiers) |
 | The feedback loop | **Send correction** writes to `/v1/feedback`; agreement and disagreement are both recorded as retraining data |
 | Live operational signals | `/v1/insights` backs a bounded traffic window: label mix, p50/p95 latency, confidence drift, tier usage |
+| A dedicated test bench | `GET /lab` runs every tier independently on the same copy: its own label, full probability distribution, server and round-trip latency, explanation, and a named fallback if one answered instead |
 | It works offline | Three.js, GSAP and Motion are vendored under `static/vendor/`; the page makes no CDN requests |
 
 ![One copy, three desks](docs/assets/studio-compare.png)
@@ -159,7 +160,7 @@ after the fact rather than hidden inside a config file.
 | Metrics | Request counts, latency histograms, confidence drift, fallbacks | `src/newsclass/metrics.py` |
 | Stateless containers | Models read from a mounted volume; no writes at runtime | `docker/Dockerfile` |
 | Reproducible builds | Multi-stage image, pinned base, non-root user | `docker/Dockerfile` |
-| Automated verification | 97 tests, CI matrix, accuracy gate, container smoke test | `tests/`, `.github/workflows/ci.yml` |
+| Automated verification | 101 tests, CI matrix, accuracy gate, container smoke test | `tests/`, `.github/workflows/ci.yml` |
 | Release gate | Refuses to ship an artifact below a macro-F1 threshold | `scripts/evaluate.py --gate` |
 | Accuracy audit | Per-class scores, calibration error, curated probes; gated in CI | `scripts/accuracy_report.py` |
 | Explainability | Native per-tier attributions (exact linear, gradient×input neural) | `src/newsclass/explain.py` |
@@ -278,7 +279,7 @@ are shown rather than smoothing one into a rounder claim.
 ## Testing
 
 ```bash
-python scripts/run_tests.py                 # 97 tests, project-local temp directory
+python scripts/run_tests.py                 # 101 tests, project-local temp directory
 ruff check src tests scripts               # lint
 python scripts/smoke_test.py --base-url http://localhost:8000   # every endpoint
 python scripts/ui_smoke.py --base-url http://localhost:8000     # real browser
@@ -313,7 +314,7 @@ the shipped UI assets, and degraded operation with no models installed.
 │   ├── metrics.py         Prometheus instruments
 │   ├── static/            Wire Desk UI + vendored Three.js/GSAP/Motion
 │   └── logging_setup.py   Structured logging
-├── tests/                 97 automated tests
+├── tests/                 101 automated tests
 ├── scripts/               run_pipeline.py, accuracy_report.py, evaluate.py, smoke_test.py, ui_smoke.py
 ├── docker/                Dockerfile, compose stack, Prometheus config
 ├── docs/                  MODEL_CARD.md, risk policy, UI screenshots
