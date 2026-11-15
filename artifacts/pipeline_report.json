@@ -1,0 +1,36 @@
+{
+  "started_at": "2026-11-15T19:25:29",
+  "trained": [],
+  "skipped": [
+    "bronze",
+    "silver",
+    "gold"
+  ],
+  "verified": [
+    {
+      "tier": "bronze",
+      "shape_ok": true,
+      "probabilities_normalised": true,
+      "accuracy": 0.895,
+      "macro_f1": 0.8944
+    },
+    {
+      "tier": "silver",
+      "shape_ok": true,
+      "probabilities_normalised": true,
+      "accuracy": 0.8915,
+      "macro_f1": 0.8911
+    },
+    {
+      "tier": "gold",
+      "shape_ok": true,
+      "probabilities_normalised": true,
+      "accuracy": 0.9067,
+      "macro_f1": 0.9065
+    }
+  ],
+  "gate": 0.85,
+  "gate_status": "passed-live",
+  "degraded": false,
+  "served": false
+}

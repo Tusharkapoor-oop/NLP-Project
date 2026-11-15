@@ -3,718 +3,423 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Wire Desk — a news topic reader</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<style>
-  /* ------------------------------------------------------------------
-     Wire Desk
-     A deliberately editorial interface: warm paper, ink, one signal
-     colour. The idea is a sub-editor's desk, not a sci-fi dashboard.
-     ------------------------------------------------------------------ */
-  :root {
-    --paper:   #f6f1e7;
-    --paper-2: #fffdf8;
-    --ink:     #1c1917;
-    --ink-2:   #57534e;
-    --ink-3:   #8c8378;
-    --rule:    #ddd3c3;
-    --signal:  #b3341f;   /* stamp red */
-    --thread:  #2f5d50;   /* ledger green */
-    --shadow:  0 1px 2px rgba(28,25,23,.06), 0 8px 24px -12px rgba(28,25,23,.18);
-  }
-  * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
-  body {
-    margin: 0;
-    background: var(--paper);
-    color: var(--ink);
-    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-    font-size: 16px;
-    line-height: 1.6;
-  }
-  .sans { font-family: ui-sans-serif, system-ui, "Segoe UI", Helvetica, Arial, sans-serif; }
-  .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
-
-  /* masthead */
-  .masthead {
-    border-bottom: 3px double var(--ink);
-    padding: 22px 28px 16px;
-    display: flex;
-    align-items: flex-end;
-    gap: 20px;
-    flex-wrap: wrap;
-    background: var(--paper);
-  }
-  .masthead h1 {
-    margin: 0;
-    font-size: 30px;
-    letter-spacing: -.4px;
-    line-height: 1;
-    font-weight: 600;
-  }
-  .masthead .kicker {
-    font-size: 11px;
-    letter-spacing: 2.4px;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    padding-bottom: 4px;
-  }
-  .masthead .live {
-    margin-left: auto;
-    font-size: 11.5px;
-    letter-spacing: 1.4px;
-    text-transform: uppercase;
-    color: var(--ink-2);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding-bottom: 3px;
-  }
-  .lamp {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--ink-3);
-    transition: background .3s;
-  }
-  .lamp.on  { background: var(--thread); box-shadow: 0 0 0 3px rgba(47,93,80,.15); }
-  .lamp.off { background: var(--signal); box-shadow: 0 0 0 3px rgba(179,52,31,.15); }
-
-  /* layout */
-  .sheet {
-    max-width: 1080px;
-    margin: 0 auto;
-    padding: 30px 28px 60px;
-    display: grid;
-    gap: 30px;
-  }
-  .two-col { display: grid; grid-template-columns: 1.15fr .85fr; gap: 30px; align-items: start; }
-  @media (max-width: 880px) { .two-col { grid-template-columns: 1fr; } }
-
-  h2.section {
-    font-size: 11px;
-    letter-spacing: 2.2px;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    margin: 0 0 12px;
-    font-weight: 600;
-  }
-
-  /* the writing pad */
-  .pad {
-    background: var(--paper-2);
-    border: 1px solid var(--rule);
-    box-shadow: var(--shadow);
-    padding: 0;
-  }
-  .pad-head {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--rule);
-    font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase;
-    color: var(--ink-3);
-  }
-  .pad-head .rule-tag {
-    margin-left: auto;
-    color: var(--ink-2);
-    letter-spacing: 1px;
-  }
-  textarea {
-    width: 100%;
-    min-height: 132px;
-    border: 0;
-    background: transparent;
-    resize: vertical;
-    padding: 16px;
-    font-family: inherit;
-    font-size: 16.5px;
-    line-height: 1.62;
-    color: var(--ink);
-  }
-  textarea:focus { outline: none; }
-  textarea::placeholder { color: var(--ink-3); font-style: italic; }
-  .pad-foot {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    padding: 12px 16px;
-    border-top: 1px solid var(--rule);
-    background: #faf6ee;
-  }
-
-  select {
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    font-size: 12.5px;
-    color: var(--ink);
-    background: var(--paper-2);
-    border: 1px solid var(--rule);
-    padding: 7px 9px;
-    border-radius: 2px;
-  }
-  button {
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    font-size: 12.5px;
-    letter-spacing: .3px;
-    cursor: pointer;
-    border-radius: 2px;
-    border: 1px solid var(--ink);
-    background: var(--ink);
-    color: var(--paper-2);
-    padding: 8px 16px;
-    transition: background .15s, color .15s, opacity .15s;
-  }
-  button:hover:not(:disabled) { background: #000; }
-  button.flat {
-    background: transparent; color: var(--ink-2); border-color: var(--rule);
-  }
-  button.flat:hover:not(:disabled) { color: var(--ink); border-color: var(--ink-3); background: transparent; }
-  button:disabled { opacity: .45; cursor: progress; }
-
-  /* example slips */
-  .slips { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 16px 16px; }
-  .slip {
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    font-size: 11.5px;
-    color: var(--ink-2);
-    background: #f1eadc;
-    border: 1px solid var(--rule);
-    border-radius: 2px;
-    padding: 5px 9px;
-    cursor: pointer;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .slip:hover { border-color: var(--ink-3); color: var(--ink); background: #ece3d2; }
-
-  /* the verdict */
-  .verdict {
-    background: var(--paper-2);
-    border: 1px solid var(--rule);
-    box-shadow: var(--shadow);
-    padding: 20px;
-    min-height: 260px;
-  }
-  .verdict-empty {
-    color: var(--ink-3);
-    font-style: italic;
-    font-size: 15px;
-    display: grid;
-    place-items: center;
-    height: 220px;
-    text-align: center;
-    padding: 0 18px;
-  }
-  .stamp {
-    display: inline-block;
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    font-size: 10.5px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--signal);
-    border: 1.5px solid var(--signal);
-    padding: 3px 8px;
-    transform: rotate(-2.5deg);
-    margin-bottom: 12px;
-  }
-  .headline-class {
-    font-size: 34px;
-    line-height: 1.08;
-    letter-spacing: -.5px;
-    margin: 0 0 4px;
-    font-weight: 600;
-  }
-  .verdict-sub {
-    font-size: 13px;
-    color: var(--ink-2);
-    padding-bottom: 14px;
-    border-bottom: 1px solid var(--rule);
-    margin-bottom: 16px;
-  }
-
-  /* probability ledger */
-  .ledger { display: grid; gap: 11px; }
-  .row {
-    display: grid;
-    grid-template-columns: 78px 1fr 46px;
-    align-items: center;
-    gap: 10px;
-    font-size: 13.5px;
-  }
-  .row .name { color: var(--ink-2); }
-  .row.top .name { color: var(--ink); font-weight: 600; }
-  .thread-track {
-    height: 7px;
-    background: #ece4d6;
-    position: relative;
-    overflow: hidden;
-  }
-  .thread-fill {
-    position: absolute; inset: 0 auto 0 0;
-    background: var(--ink-3);
-    transition: width .45s cubic-bezier(.2,.8,.3,1);
-  }
-  .row.top .thread-fill { background: var(--thread); }
-  .row .num {
-    text-align: right;
-    font-family: ui-monospace, Menlo, Consolas, monospace;
-    font-size: 12px;
-    color: var(--ink-2);
-    font-variant-numeric: tabular-nums;
-  }
-  .row.top .num { color: var(--ink); font-weight: 600; }
-
-  .fineprint {
-    margin-top: 16px;
-    padding-top: 12px;
-    border-top: 1px dotted var(--rule);
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    font-size: 11px;
-    color: var(--ink-3);
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  .badge {
-    font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase;
-    padding: 2px 6px; border: 1px solid currentColor; border-radius: 2px;
-  }
-  .t-bronze { color: #8a5a2b; }
-  .t-silver { color: #6b7280; }
-  .t-gold   { color: #96751a; }
-
-  /* article list */
-  .desk { background: transparent; }
-  .bulletin {
-    border-top: 1px solid var(--rule);
-    padding: 13px 0;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 14px;
-    align-items: baseline;
-  }
-  .bulletin:last-child { border-bottom: 1px solid var(--rule); }
-  .bulletin .lede {
-    margin: 0;
-    font-size: 15px;
-    color: var(--ink-2);
-  }
-  .bulletin .tag {
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    font-size: 10.5px;
-    letter-spacing: 1.3px;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    white-space: nowrap;
-  }
-  .bulletin .tag b { color: var(--thread); font-weight: 600; }
-
-  /* model desk table */
-  table { width: 100%; border-collapse: collapse; }
-  th {
-    text-align: left;
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    font-size: 10px;
-    letter-spacing: 1.6px;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    font-weight: 600;
-    padding: 0 10px 8px 0;
-    border-bottom: 1px solid var(--ink);
-  }
-  td {
-    padding: 11px 10px 11px 0;
-    border-bottom: 1px solid var(--rule);
-    font-size: 14px;
-    vertical-align: top;
-  }
-  td.num {
-    text-align: right;
-    font-family: ui-monospace, Menlo, Consolas, monospace;
-    font-size: 12.5px;
-    font-variant-numeric: tabular-nums;
-  }
-  td .why { display: block; font-size: 12px; color: var(--ink-3); margin-top: 2px; line-height: 1.45; }
-
-  .note {
-    font-size: 13px;
-    color: var(--ink-3);
-    font-style: italic;
-    margin: 14px 0 0;
-    padding-left: 12px;
-    border-left: 2px solid var(--rule);
-  }
-
-  .oops {
-    margin-top: 12px;
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    font-size: 12.5px;
-    color: var(--signal);
-    background: #fbeee9;
-    border: 1px solid #e8c8bd;
-    padding: 9px 11px;
-    border-radius: 2px;
-    white-space: pre-wrap;
-  }
-
-  colophon {
-    display: block;
-    max-width: 1080px;
-    margin: 0 auto;
-    padding: 0 28px 46px;
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    font-size: 11.5px;
-    color: var(--ink-3);
-    border-top: 1px solid var(--rule);
-    padding-top: 16px;
-  }
-  colophon a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--rule); }
-  colophon a:hover { color: var(--ink); border-color: var(--ink-3); }
-
-  .spinner {
-    display: inline-block; width: 9px; height: 9px;
-    border: 1.5px solid currentColor; border-right-color: transparent;
-    border-radius: 50%; animation: spin .6s linear infinite;
-    vertical-align: -1px; margin-right: 6px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) {
-    * { animation: none !important; transition: none !important; }
-  }
-</style>
+<meta name="theme-color" content="#070a09" />
+<title>Wire Desk — three models, one newsroom</title>
+<meta name="description" content="A production NLP service that classifies news into World, Sports, Business and Sci/Tech across three interchangeable model tiers — with explanations, feedback and live metrics." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23070a09'/%3E%3Ctext x='50' y='68' font-family='Georgia,serif' font-size='52' fill='%23f5f0e6' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="/static/assets/styles.css" />
 </head>
 <body>
 
-<header class="masthead">
-  <div>
-    <div class="kicker sans">Natural Language Processing · Service Demo</div>
-    <h1>Wire Desk</h1>
-  </div>
-  <div class="live sans">
+<a class="skip-link" href="#studio">Skip to the classifier</a>
+
+<!-- cinematic loading veil; removed by app.js as soon as the UI is ready -->
+<div class="preloader" id="preloader" aria-hidden="true">
+  <div class="preloader-mark">W<span>·</span>D</div>
+  <div class="preloader-meter"><span id="preloader-bar"></span></div>
+  <div class="preloader-count mono" id="preloader-count">00</div>
+</div>
+
+<div class="scene-wrap" aria-hidden="true">
+  <canvas id="scene-canvas"></canvas>
+  <div class="scene-vignette"></div>
+  <div class="scene-fallback"></div>
+</div>
+
+<div class="cursor-dot" id="cursor-dot" aria-hidden="true"></div>
+<div class="cursor-ring" id="cursor-ring" aria-hidden="true"></div>
+<div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <a class="brand" href="#top" aria-label="Wire Desk, back to top">
+    <span class="brand-mark" aria-hidden="true">W</span>
+    <span class="brand-name">Wire&nbsp;Desk</span>
+    <span class="brand-tag mono">v1.0</span>
+  </a>
+
+  <nav class="nav-links" aria-label="Sections">
+    <a href="#studio" data-magnetic>Studio</a>
+    <a href="#desks" data-magnetic>Desks</a>
+    <a href="#method" data-magnetic>Method</a>
+    <a href="#insights" data-magnetic>Signals</a>
+  </nav>
+
+  <div class="nav-status" id="status-pill" title="Service readiness">
     <span class="lamp" id="lamp"></span>
-    <span id="liveText">connecting</span>
+    <span id="status-text">connecting</span>
   </div>
 </header>
 
-<main class="sheet">
+<main id="top">
 
-  <div class="two-col">
-    <!-- left: the pad -->
-    <div>
-      <h2 class="section sans">File copy</h2>
-      <div class="pad">
-        <div class="pad-head sans">
-          <span>Headline or opening paragraph</span>
-          <span class="rule-tag mono" id="charCount">0 chars</span>
-        </div>
-        <textarea id="copy" spellcheck="true"
-          placeholder="Paste a headline, a lead paragraph, or the whole first section. The desk will assign it to a section.">Apple unveiled a new chip on Tuesday, claiming it is twice as fast as the previous generation while using less power — a pitch aimed squarely at laptop buyers.</textarea>
-        <div class="pad-foot">
-          <select id="desk" aria-label="Model tier">
-            <option value="">House default</option>
-            <option value="bronze">quick desk</option>
-            <option value="silver">features desk</option>
-            <option value="gold">standards desk</option>
-          </select>
-          <button id="file">File story</button>
-          <button class="flat" id="race" title="Run the same copy through every model">Compare desks</button>
-          <button class="flat" id="reset">Clear</button>
-        </div>
-        <div class="slips sans" id="slips"></div>
-      </div>
-      <div class="oops" id="oops" hidden></div>
+  <!-- ===================================================== HERO -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-inner">
+      <p class="kicker reveal">
+        <span class="kicker-dot"></span>
+        Natural language processing · production service
+      </p>
 
-      <h2 class="section sans" style="margin-top:26px">Bulletin</h2>
-      <div class="desk" id="bulletin">
-        <p class="note">Filed stories will appear here, newest first.</p>
+      <h1 class="hero-title" id="hero-title">
+        Every headline<br />
+        <em>finds its desk.</em>
+      </h1>
+
+      <p class="hero-sub reveal">
+        A four-class news classifier shipped as a real service — not a notebook.
+        Three interchangeable model tiers, a release gate that refuses to ship a
+        weak model, per-token explanations, human corrections, and live traffic
+        signals behind one endpoint.
+      </p>
+
+      <div class="hero-actions reveal">
+        <a class="btn btn-primary" href="#studio" data-magnetic data-cursor="write">
+          Open the desk
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M12 5l7 7-7 7" /></svg>
+        </a>
+        <a class="btn btn-ghost" href="/docs" target="_blank" rel="noopener" data-magnetic data-cursor="read">
+          Read the API
+        </a>
       </div>
+
+      <dl class="hero-stats reveal">
+        <div><dt>Topics</dt><dd class="mono">04</dd></div>
+        <div><dt>Model tiers</dt><dd class="mono">03</dd></div>
+        <div><dt>Automated tests</dt><dd class="mono">97</dd></div>
+        <div><dt>Training rows</dt><dd class="mono">20k</dd></div>
+      </dl>
     </div>
 
-    <!-- right: the verdict -->
-    <div>
-      <h2 class="section sans">Assignment</h2>
-      <div class="verdict" id="verdict">
-        <div class="verdict-empty">Nothing filed yet.<br />Write some copy and the desk will assign a section.</div>
-      </div>
+    <div class="hero-scroll" aria-hidden="true">
+      <span class="mono">scroll</span>
+      <span class="hero-scroll-line"></span>
     </div>
-  </div>
 
-  <section>
-    <h2 class="section sans">The desks</h2>
-    <table>
-      <thead>
-        <tr>
-          <th style="width:96px">Desk</th>
-          <th>Model &amp; notes</th>
-          <th class="num" style="width:74px">Accuracy</th>
-          <th class="num" style="width:66px">Macro F1</th>
-          <th class="num" style="width:62px">Size</th>
-          <th style="width:78px">Status</th>
-        </tr>
-      </thead>
-      <tbody id="desks"></tbody>
-    </table>
-    <p class="note">
-      Three models of increasing cost sit behind one endpoint. The cheap desk is a
-      bag-of-words model; the expensive one is a fine-tuned Transformer. Comparing
-      them on the same copy is the whole point of the exercise.
-    </p>
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track" id="ticker-track"></div>
+    </div>
   </section>
 
+  <!-- ===================================================== STUDIO -->
+  <section class="section studio" id="studio" aria-labelledby="studio-title">
+    <header class="section-head">
+      <div>
+        <p class="section-index mono">01 / Studio</p>
+        <h2 id="studio-title">File copy. Get a section.</h2>
+      </div>
+      <p class="section-note">
+        This panel talks to the live API on this machine. Pick a tier, or let the
+        house default decide. Every number below is measured, not decorated.
+      </p>
+    </header>
+
+    <div class="studio-grid">
+
+      <!-- ---------- input ---------- -->
+      <div class="card pad-card reveal">
+        <div class="card-head">
+          <span class="card-label">Copy desk</span>
+          <span class="char-count mono" id="char-count">0 chars</span>
+        </div>
+
+        <label class="sr-only" for="copy">News text to classify</label>
+        <textarea id="copy" spellcheck="true" maxlength="20000"
+          placeholder="Paste a headline or lead paragraph. The desk will assign it to World, Sports, Business or Sci/Tech.">Apple unveiled a new chip on Tuesday, claiming it is twice as fast as the previous generation while using less power — a pitch aimed squarely at laptop buyers.</textarea>
+
+        <div class="samples" id="samples" aria-label="Example stories"></div>
+
+        <div class="pad-controls">
+          <fieldset class="segmented" id="tier-group">
+            <legend class="sr-only">Model tier</legend>
+            <input type="radio" name="tier" id="tier-default" value="" checked />
+            <label for="tier-default">House</label>
+            <input type="radio" name="tier" id="tier-bronze" value="bronze" />
+            <label for="tier-bronze" data-tier="bronze">Bronze</label>
+            <input type="radio" name="tier" id="tier-silver" value="silver" />
+            <label for="tier-silver" data-tier="silver">Silver</label>
+            <input type="radio" name="tier" id="tier-gold" value="gold" />
+            <label for="tier-gold" data-tier="gold">Gold</label>
+          </fieldset>
+
+          <div class="pad-actions">
+            <button class="btn btn-primary" id="btn-file" type="button">
+              <span class="btn-label">File story</span>
+            </button>
+            <button class="btn btn-ghost" id="btn-compare" type="button">Compare desks</button>
+            <button class="btn btn-quiet" id="btn-clear" type="button">Clear</button>
+          </div>
+        </div>
+
+        <p class="hint mono"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> to file · drag a tier chip to see cost trade-offs</p>
+      </div>
+
+      <!-- ---------- verdict ---------- -->
+      <div class="card verdict-card reveal" id="verdict-card" aria-live="polite">
+        <div class="card-head">
+          <span class="card-label">Assignment</span>
+          <span class="mono verdict-ref" id="verdict-ref">—</span>
+        </div>
+
+        <div class="verdict-empty" id="verdict-empty">
+          <div class="empty-orbit" aria-hidden="true"><span></span></div>
+          <p>Nothing filed yet.</p>
+          <p class="dim">Write some copy and the desk will assign a section.</p>
+        </div>
+
+        <div class="verdict-result" id="verdict-result" hidden>
+          <div class="stamp-row">
+            <span class="stamp" id="verdict-stamp">Filed under</span>
+            <span class="tier-chip" id="meta-tier">bronze</span>
+          </div>
+
+          <h3 class="verdict-label" id="verdict-label">Business</h3>
+
+          <div class="verdict-metrics">
+            <div class="ring-wrap">
+              <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="ring-bg" cx="60" cy="60" r="52" />
+                <circle class="ring-fg" id="confidence-ring" cx="60" cy="60" r="52" />
+              </svg>
+              <div class="ring-label">
+                <span class="mono" id="confidence-value">0%</span>
+                <small>confidence</small>
+              </div>
+            </div>
+
+            <div class="mini-meta">
+              <div><span>Latency</span><b class="mono" id="meta-latency">—</b></div>
+              <div><span>Model</span><b class="mono" id="meta-version">—</b></div>
+              <div><span>Filed</span><b class="mono" id="meta-time">—</b></div>
+            </div>
+          </div>
+
+          <div class="bars" id="bars" role="list" aria-label="Class probabilities"></div>
+
+          <div class="explain" id="explain-panel">
+            <div class="explain-head">
+              <span class="card-label">Why this label</span>
+              <button class="link-btn" id="btn-explain" type="button">Explain</button>
+            </div>
+            <p class="explain-method mono" id="explain-method">not computed yet</p>
+            <div class="tokens" id="explain-tokens"></div>
+          </div>
+
+          <div class="feedback">
+            <span class="card-label">Disagree?</span>
+            <div class="feedback-row">
+              <label class="sr-only" for="feedback-label">Correct section</label>
+              <select id="feedback-label" aria-label="Correct section"></select>
+              <button class="btn btn-quiet" id="btn-feedback" type="button">Send correction</button>
+            </div>
+            <p class="hint mono">Corrections are stored as retraining data, not complaints.</p>
+          </div>
+        </div>
+
+        <div class="compare" id="compare-panel" hidden>
+          <div class="explain-head">
+            <span class="card-label">Same copy · three desks</span>
+            <button class="link-btn" id="btn-compare-close" type="button">Close</button>
+          </div>
+          <div class="compare-grid" id="compare-grid"></div>
+          <p class="hint mono" id="compare-note"></p>
+        </div>
+
+        <div class="verdict-loading" id="verdict-loading" hidden>
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Reading the copy…</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <!-- ---------- bulletin ---------- -->
+    <div class="bulletin-wrap reveal">
+      <div class="bulletin-head">
+        <h3>Bulletin</h3>
+        <span class="mono dim" id="bulletin-count">0 filed</span>
+      </div>
+      <ol class="bulletin" id="bulletin"></ol>
+      <p class="bulletin-empty" id="bulletin-empty">Filed stories appear here, newest first.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== DESKS -->
+  <section class="section desks" id="desks" aria-labelledby="desks-title">
+    <header class="section-head">
+      <div>
+        <p class="section-index mono">02 / The desks</p>
+        <h2 id="desks-title">Quality is a budget decision.</h2>
+      </div>
+      <p class="section-note">
+        Three models, one contract. The cheap desk is a linear model; the expensive
+        one is a fine-tuned transformer. Comparing them on the same copy is the point.
+      </p>
+    </header>
+
+    <div class="desk-grid" id="desks-grid">
+      <div class="desk-skeleton"></div>
+      <div class="desk-skeleton"></div>
+      <div class="desk-skeleton"></div>
+    </div>
+
+    <p class="caption mono" id="desks-caption">reading the model registry…</p>
+  </section>
+
+  <!-- ===================================================== METHOD -->
+  <section class="section method" id="method" aria-labelledby="method-title">
+    <header class="section-head">
+      <div>
+        <p class="section-index mono">03 / Method</p>
+        <h2 id="method-title">A pipeline that refuses to lie.</h2>
+      </div>
+      <p class="section-note">
+        One command trains what is missing, loads every artifact through the real
+        registry, checks probability shape, merges the registry, and blocks serving
+        unless the macro-F1 gate passes.
+      </p>
+    </header>
+
+    <div class="method-board">
+      <div class="method-line" aria-hidden="true">
+        <span class="method-progress" id="method-progress"></span>
+      </div>
+
+      <ol class="method-steps" id="method-steps">
+        <li class="method-step">
+          <span class="step-num mono">01</span>
+          <h3>Dataset</h3>
+          <p>AG News from the Hugging Face Hub. One fixed split, one seed, no bundled scraped data.</p>
+          <span class="step-stat mono" data-count="20000" data-suffix=" rows">0 rows</span>
+        </li>
+        <li class="method-step">
+          <span class="step-num mono">02</span>
+          <h3>Train</h3>
+          <p>TF-IDF, Word2Vec + BiLSTM, and DistilBERT — the same preprocessing module at train and serve time.</p>
+          <span class="step-stat mono" data-count="3" data-suffix=" tiers">0 tiers</span>
+        </li>
+        <li class="method-step">
+          <span class="step-num mono">03</span>
+          <h3>Gate</h3>
+          <p>Every artifact is re-scored on held-out data. Below the macro-F1 threshold, the pipeline exits non-zero.</p>
+          <span class="step-stat mono" data-count="0.85" data-decimals="2" data-suffix=" gate">0 gate</span>
+        </li>
+        <li class="method-step">
+          <span class="step-num mono">04</span>
+          <h3>Serve</h3>
+          <p>FastAPI with readiness probes, fallback routing, Prometheus metrics and a request id on every response.</p>
+          <span class="step-stat mono" data-count="97" data-suffix=" tests">0 tests</span>
+        </li>
+      </ol>
+    </div>
+
+    <div class="terminal reveal" role="img" aria-label="Example pipeline output">
+      <div class="terminal-bar">
+        <span></span><span></span><span></span>
+        <em class="mono">python scripts/run_pipeline.py --serve</em>
+      </div>
+      <pre class="mono" id="terminal-text"></pre>
+    </div>
+  </section>
+
+  <!-- ===================================================== INSIGHTS -->
+  <section class="section insights" id="insights" aria-labelledby="insights-title">
+    <header class="section-head">
+      <div>
+        <p class="section-index mono">04 / Signals</p>
+        <h2 id="insights-title">What this process has seen.</h2>
+      </div>
+      <p class="section-note">
+        A bounded, in-process window of recent predictions — not a warehouse. The
+        durable record is Prometheus; the durable record of judgement is feedback.
+      </p>
+    </header>
+
+    <div class="insight-grid">
+      <div class="card insight-card reveal">
+        <div class="card-head"><span class="card-label">Label mix</span><span class="mono dim" id="ins-events">0 events</span></div>
+        <div class="mix">
+          <svg class="mix-ring" id="mix-ring" viewBox="0 0 140 140" role="img" aria-labelledby="mix-title">
+            <title id="mix-title">Share of predictions by topic</title>
+            <circle class="mix-bg" cx="70" cy="70" r="54" />
+            <g id="mix-segments"></g>
+          </svg>
+          <ul class="mix-legend" id="mix-legend"></ul>
+        </div>
+      </div>
+
+      <div class="card insight-card reveal">
+        <div class="card-head"><span class="card-label">Latency</span><span class="mono dim">milliseconds</span></div>
+        <div class="stat-row">
+          <div><span class="mono stat-value" id="ins-p50">—</span><small>p50</small></div>
+          <div><span class="mono stat-value" id="ins-p95">—</span><small>p95</small></div>
+          <div><span class="mono stat-value" id="ins-mean">—</span><small>mean</small></div>
+        </div>
+        <p class="caption mono">inference time only; excludes HTTP overhead</p>
+      </div>
+
+      <div class="card insight-card reveal">
+        <div class="card-head"><span class="card-label">Confidence</span><span class="mono dim">drift proxy</span></div>
+        <div class="stat-row">
+          <div><span class="mono stat-value" id="ins-conf">—</span><small>mean</small></div>
+          <div><span class="mono stat-value" id="ins-low">—</span><small>low &lt; 0.60</small></div>
+          <div><span class="mono stat-value" id="ins-fallback">—</span><small>fallbacks</small></div>
+        </div>
+        <p class="caption mono">falling confidence is the earliest drift signal</p>
+      </div>
+
+      <div class="card insight-card wide reveal">
+        <div class="card-head"><span class="card-label">Traffic shape</span><span class="mono dim" id="ins-updated">—</span></div>
+        <svg class="sparkline" id="sparkline" viewBox="0 0 600 120" preserveAspectRatio="none" role="img" aria-label="Recent prediction volume by class"></svg>
+        <ul class="tier-usage" id="tier-usage"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== CLOSING -->
+  <section class="section closing" aria-labelledby="closing-title">
+    <p class="section-index mono">05 / Colophon</p>
+    <h2 id="closing-title">Measured, gated, explained —<br /><em>and honest about it.</em></h2>
+    <p class="closing-sub">
+      The service states its own limits: gold truncates at 64 tokens, run-to-run
+      variance is about half a point, and nothing here is authenticated. Being
+      explicit is cheaper than being caught out.
+    </p>
+    <div class="closing-actions">
+      <a class="btn btn-primary" href="/docs" target="_blank" rel="noopener" data-magnetic>API reference</a>
+      <a class="btn btn-ghost" href="/metrics" target="_blank" rel="noopener" data-magnetic>Prometheus metrics</a>
+      <a class="btn btn-ghost" href="/v1/tiers" target="_blank" rel="noopener" data-magnetic>Registry JSON</a>
+    </div>
+  </section>
 </main>
 
-<colophon class="sans">
-  <span id="footBuild">—</span> ·
-  <a href="/docs" target="_blank" rel="noopener">API reference</a> ·
-  <a href="/metrics" target="_blank" rel="noopener">Service metrics</a> ·
-  <a href="/v1/tiers" target="_blank" rel="noopener">Model registry</a>
-</colophon>
+<footer class="footer">
+  <div class="footer-inner">
+    <span>Wire Desk · <span id="foot-version" class="mono">v1.0.0</span></span>
+    <span class="dim">FastAPI · scikit-learn · PyTorch · transformers · Three.js · GSAP · Motion</span>
+    <span class="mono dim" id="foot-backend">metrics: —</span>
+  </div>
+</footer>
 
+<!-- Classic scripts first so the globals exist before the module runs. -->
+<script src="/static/vendor/gsap.min.js"></script>
+<script src="/static/vendor/ScrollTrigger.min.js"></script>
+<script src="/static/vendor/ScrollToPlugin.min.js"></script>
+<script src="/static/vendor/Flip.min.js"></script>
+<script src="/static/vendor/Observer.min.js"></script>
+<script src="/static/vendor/motion.min.js"></script>
+<script src="/static/vendor/three.min.js"></script>
+<script type="module" src="/static/assets/app.js"></script>
+<noscript>
+  <style>.preloader, .scene-wrap, .cursor-dot, .cursor-ring { display: none !important; }</style>
+</noscript>
 <script>
-(() => {
-  "use strict";
-
-  const $ = (id) => document.getElementById(id);
-
-  const SECTIONS = ["World", "Sports", "Business", "Sci/Tech"];
-
-  const SAMPLES = [
-    ["Interest rates were held steady as policymakers weighed a cooling labour market.", "business"],
-    ["The striker's late header sent his side through to the semi-final.", "sport"],
-    ["Engineers released a patch for a flaw that affected millions of routers.", "tech"],
-    ["Envoys met for a third day of talks over the disputed border region.", "world"],
-    ["Quarterly profits beat forecasts, sending the shares up in early trading.", "business"],
-    ["A spacecraft returned samples from the asteroid after a seven-year journey.", "tech"]
-  ];
-
-  // ---- connectivity ------------------------------------------------
-  async function checkConnection() {
-    const lamp = $("lamp"), text = $("liveText");
-    try {
-      const res = await fetch("/readyz", { cache: "no-store" });
-      if (!res.ok) throw new Error("not ready");
-      const body = await res.json();
-      lamp.className = "lamp on";
-      text.textContent = "desk open · " + body.default_tier + " default";
-    } catch {
-      lamp.className = "lamp off";
-      text.textContent = "desk closed";
-    }
-  }
-
-  // ---- the desks table ---------------------------------------------
-  async function loadDesks() {
-    const body = $("desks");
-    try {
-      const res = await fetch("/v1/tiers");
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const tiers = await res.json();
-
-      body.innerHTML = tiers.map((t) => {
-        const acc = t.accuracy == null ? "—" : (t.accuracy * 100).toFixed(1) + "%";
-        const f1 = t.macro_f1 == null ? "—" : t.macro_f1.toFixed(3);
-        const size = t.size_mb == null ? "—" : fmtSize(t.size_mb);
-        const state = t.ready
-          ? '<span style="color:var(--thread)">open</span>'
-          : '<span style="color:var(--ink-3)">not trained</span>';
-        const label = t.tier.charAt(0).toUpperCase() + t.tier.slice(1);
-        return `<tr>
-          <td><span class="badge t-${t.tier}">${label}</span></td>
-          <td><strong>${esc(t.model_name)}</strong><span class="why">${esc(t.description)}</span></td>
-          <td class="num">${acc}</td>
-          <td class="num">${f1}</td>
-          <td class="num">${size}</td>
-          <td class="sans" style="font-size:11.5px">${state}</td>
-        </tr>`;
-      }).join("");
-
-      const version = tiers[0] && tiers[0].model_version ? tiers[0].model_version : "1.0.0";
-      $("footBuild").textContent = "service v" + version;
-    } catch (e) {
-      body.innerHTML = `<tr><td colspan="6" class="why">Could not read the registry: ${esc(e.message)}</td></tr>`;
-    }
-  }
-
-  const fmtSize = (mb) => (mb < 1 ? Math.round(mb * 1000) + " KB" : mb.toFixed(1) + " MB");
-
-  const esc = (s) => String(s == null ? "" : s)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-
-  // ---- filing ------------------------------------------------------
-  function showOops(message) {
-    const box = $("oops");
-    box.hidden = !message;
-    box.textContent = message || "";
-  }
-
-  function renderVerdict(body) {
-    const sorted = body.scores.slice().sort((a, b) => b.probability - a.probability);
-    const rows = sorted.map((s, i) => `
-      <div class="row ${i === 0 ? "top" : ""}">
-        <span class="name">${esc(s.label)}</span>
-        <div class="thread-track"><div class="thread-fill" style="width:${(s.probability * 100).toFixed(1)}%"></div></div>
-        <span class="num">${(s.probability * 100).toFixed(1)}%</span>
-      </div>`).join("");
-
-    $("verdict").innerHTML = `
-      <div class="stamp sans">Filed under</div>
-      <div class="headline-class">${esc(body.label)}</div>
-      <div class="verdict-sub">
-        ${(body.confidence * 100).toFixed(1)}% confidence
-        · ${body.latency_ms.toFixed(0)} ms
-        · <span class="badge t-${body.tier}">${esc(body.tier)}</span>
-      </div>
-      <div class="ledger">${rows}</div>
-      <div class="fineprint sans">
-        <span>model ${esc(body.model_version)}</span>
-        <span>${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-      </div>`;
-  }
-
-  function prependBulletin(text, body) {
-    let list = $("bulletin");
-    const existingNote = list.querySelector(".note");
-    if (existingNote) existingNote.remove();
-
-    const item = document.createElement("div");
-    item.className = "bulletin";
-    const excerpt = text.length > 96 ? text.slice(0, 96).trim() + "…" : text;
-    item.innerHTML = `
-      <p class="lede">${esc(excerpt)}</p>
-      <span class="tag">filed as <b>${esc(body.label)}</b> · ${(body.confidence * 100).toFixed(0)}%</span>`;
-    list.insertBefore(item, list.firstChild);
-
-    // keep the bulletin to a readable length
-    while (list.children.length > 8) list.removeChild(list.lastChild);
-  }
-
-  async function fileStory() {
-    const text = $("copy").value.trim();
-    if (!text) { showOops("There is no copy to file."); return; }
-    showOops("");
-
-    const btn = $("file");
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span>filing';
-
-    try {
-      const payload = { text };
-      const desk = $("desk").value;
-      if (desk) payload.tier = desk;
-
-      const res = await fetch("/v1/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const body = await res.json();
-
-      if (!res.ok) {
-        const detail = body && body.detail
-          ? (typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail))
-          : "HTTP " + res.status;
-        showOops("The desk rejected this copy: " + detail);
-        return;
-      }
-      renderVerdict(body);
-      prependBulletin(text, body);
-      checkConnection();
-    } catch (e) {
-      showOops("Could not reach the service: " + e.message);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "File story";
-    }
-  }
-
-  // ---- compare all desks -------------------------------------------
-  async function compareDesks() {
-    const text = $("copy").value.trim();
-    if (!text) { showOops("There is no copy to compare."); return; }
-    showOops("");
-
-    try {
-      const tiersRes = await fetch("/v1/tiers");
-      const tiers = await tiersRes.json();
-      const open = tiers.filter((t) => t.ready).map((t) => t.tier);
-
-      if (!open.length) { showOops("No desks are open."); return; }
-
-      const results = [];
-      for (const tier of open) {
-        const res = await fetch("/v1/predict", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, tier })
-        });
-        if (!res.ok) continue;
-        results.push(await res.json());
-      }
-
-      if (!results.length) { showOops("No desk returned an answer."); return; }
-
-      const rows = results.map((r) => `
-        <tr>
-          <td><span class="badge t-${r.tier}">${esc(r.tier)}</span></td>
-          <td>${esc(r.label)}</td>
-          <td class="num">${(r.confidence * 100).toFixed(1)}%</td>
-          <td class="num">${r.latency_ms.toFixed(0)} ms</td>
-        </tr>`).join("");
-
-      $("verdict").innerHTML = `
-        <div class="stamp sans">Desk comparison</div>
-        <table style="margin-top:4px">
-          <thead><tr><th>Desk</th><th>Section</th><th class="num">Conf.</th><th class="num">Time</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-        <p style="font-size:12.5px;color:var(--ink-3);font-style:italic;margin:14px 0 0">
-          Agreement between desks is a rough signal of how easy this copy was to place.
-        </p>`;
-    } catch (e) {
-      showOops("Comparison failed: " + e.message);
-    }
-  }
-
-  // ---- wiring ------------------------------------------------------
-  $("slips").innerHTML = SAMPLES
-    .map((s, i) => `<button class="slip" type="button" data-i="${i}" title="${esc(s[0])}">${esc(s[0].slice(0, 34))}…</button>`)
-    .join("");
-
-  $("slips").addEventListener("click", (e) => {
-    const slip = e.target.closest(".slip");
-    if (!slip) return;
-    $("copy").value = SAMPLES[Number(slip.dataset.i)][0];
-    updateCount();
-    $("copy").focus();
-  });
-
-  const updateCount = () => {
-    $("charCount").textContent = $("copy").value.length + " chars";
-  };
-  $("copy").addEventListener("input", updateCount);
-
-  $("file").addEventListener("click", fileStory);
-  $("race").addEventListener("click", compareDesks);
-  $("reset").addEventListener("click", () => {
-    $("copy").value = "";
-    updateCount();
-    showOops("");
-    $("verdict").innerHTML =
-      '<div class="verdict-empty">Nothing filed yet.<br />Write some copy and the desk will assign a section.</div>';
-    $("copy").focus();
-  });
-
-  $("copy").addEventListener("keydown", (e) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-      e.preventDefault();
-      fileStory();
-    }
-  });
-
-  updateCount();
-  checkConnection();
-  loadDesks();
-  setInterval(checkConnection, 30000);
-})();
+  // If the ES module fails to load (old browser, blocked asset), never leave
+  // the visitor staring at the loading veil.
+  setTimeout(function () {
+    var veil = document.getElementById("preloader");
+    if (veil) veil.classList.add("is-done");
+  }, 5000);
 </script>
 </body>
 </html>

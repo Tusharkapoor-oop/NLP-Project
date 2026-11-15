@@ -1,22 +1,68 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "newsclass"
-version = "1.0.0"
+version = "1.1.0"
 description = "Enterprise news topic classification with bronze/silver/gold model tiers"
+readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = ["nlp", "classification", "fastapi", "distilbert", "word2vec", "tfidf"]
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Framework :: FastAPI",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+]
 
-[project.optional-dependencies]
-serve = [
-    "fastapi>=0.110",
+dependencies = [
+    "fastapi>=0.163",
+    "starlette>=1.0,<2",
     "uvicorn>=0.27",
+    "pydantic>=2.5",
     "pydantic-settings>=2.0",
     "prometheus-client>=0.19",
     "pyyaml>=6.0",
+    "scikit-learn>=1.3",
+    "numpy>=1.24",
+    "joblib>=1.3",
+]
+
+[project.optional-dependencies]
+train = [
+    "torch",
+    "transformers>=4.40",
+    "datasets>=2.19",
+    "accelerate>=0.30",
+    "gensim>=4.3",
+    "nltk>=3.8",
 ]
 dev = [
     "pytest>=8.0",
     "httpx>=0.27",
     "ruff>=0.4",
+    "playwright>=1.40",
 ]
+
+[project.scripts]
+newsclass-train = "newsclass.train:main"
+
+[project.urls]
+Homepage = "https://github.com/"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+newsclass = ["static/**/*", "static/*"]
 
 [tool.ruff]
 line-length = 100
@@ -29,3 +75,4 @@ ignore = ["E501"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+addopts = "-p no:cacheprovider"

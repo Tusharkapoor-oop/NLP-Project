@@ -79,9 +79,7 @@ def main() -> int:
     env["TMP"] = str(env_bin)
     env["TEMP"] = str(env_bin)
     env["TMPDIR"] = str(env_bin)
-    env["PYTHONPATH"] = str(PROJECT_ROOT / "src") + os.pathsep + env.get(
-        "PYTHONPATH", ""
-    )
+    env["PYTHONPATH"] = str(PROJECT_ROOT / "src") + os.pathsep + env.get("PYTHONPATH", "")
     # A cache that cannot be written should warn, not fail the run.
     env["PYTEST_ADDOPTS"] = env.get("PYTEST_ADDOPTS", "") + " -p no:cacheprovider"
 

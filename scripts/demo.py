@@ -42,11 +42,15 @@ def show(client: httpx.Client, text: str, tier: str | None) -> None:
 
     body = response.json()
     print(f"\n  text   : {text[:88]}")
-    print(f"  result : {body['label']}  ({body['confidence']:.1%})   "
-          f"tier={body['tier']}  {body['latency_ms']:.1f} ms")
+    print(
+        f"  result : {body['label']}  ({body['confidence']:.1%})   "
+        f"tier={body['tier']}  {body['latency_ms']:.1f} ms"
+    )
     print()
     for score in body["scores"]:
-        print(f"    {score['label']:<10} {render_bar(score['probability'])} {score['probability']:6.1%}")
+        print(
+            f"    {score['label']:<10} {render_bar(score['probability'])} {score['probability']:6.1%}"
+        )
 
 
 def main() -> int:
@@ -62,7 +66,9 @@ def main() -> int:
             health = client.get("/healthz")
         except httpx.HTTPError as exc:
             print(f"Cannot reach {base}: {exc}", file=sys.stderr)
-            print("Start the service first:  uvicorn newsclass.app:app --port 8000", file=sys.stderr)
+            print(
+                "Start the service first:  uvicorn newsclass.app:app --port 8000", file=sys.stderr
+            )
             return 1
 
         if health.status_code != 200:

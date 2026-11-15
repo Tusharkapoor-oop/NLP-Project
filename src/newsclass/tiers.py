@@ -186,6 +186,7 @@ class GoldModel(TierModel):
         self._tokenizer = AutoTokenizer.from_pretrained(str(self.directory))
         self._model = AutoModelForSequenceClassification.from_pretrained(str(self.directory))
         self._model.eval()
+        self._torch = torch  # kept for the explainability path
         id2label = getattr(self._model.config, "id2label", {}) or {}
         self._labels = [id2label[i] for i in sorted(id2label)] if id2label else []
 

@@ -101,7 +101,9 @@ class TestSinglePrediction:
 
     def test_business_text_classifies_reasonably(self, client):
         # Not a hard accuracy claim, just that the pipeline is wired correctly.
-        body = client.post("/v1/predict", json={"text": "stocks rise as market gains on earnings"}).json()
+        body = client.post(
+            "/v1/predict", json={"text": "stocks rise as market gains on earnings"}
+        ).json()
         assert body["label"] in {"Business", "World", "Sports", "Sci/Tech"}
 
 
@@ -123,6 +125,15 @@ class TestValidation:
         huge = "word " * 60_000
         response = client.post("/v1/predict", json={"text": huge})
         assert response.status_code in (413, 422)
+
+    def test_validation_error_does_not_echo_the_document(self, client):
+        # A rejected body must not be copied back verbatim: the response would
+        # be huge and would duplicate text that could be sensitive.
+        secret = "internal-draft-" * 2_000
+        response = client.post("/v1/predict", json={"text": secret})
+        assert response.status_code == 422
+        assert "internal-draft" not in response.text
+        assert "string_too_long" in response.text
 
 
 class TestBatchPrediction:
@@ -176,3 +187,144 @@ class TestDocs:
         response = client.get("/openapi.json")
         assert response.status_code == 200
         assert "/v1/predict" in response.json()["paths"]
+
+
+class TestExplanation:
+    def test_explain_returns_token_evidence(self, client):
+        response = client.post(
+            "/v1/explain", json={"text": "stocks rise as the market gains on earnings"}
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["label"]
+        assert body["explanation_method"]
+        assert body["explanation_method"] != "unavailable"
+        assert isinstance(body["tokens"], list)
+        assert body["tokens"], "the linear tier must attribute at least one token"
+        assert "token" in body["tokens"][0]
+
+    def test_tokens_are_ranked_by_absolute_contribution(self, client):
+        body = client.post(
+            "/v1/explain", json={"text": "apple launches a new laptop with a faster chip"}
+        ).json()
+        magnitudes = [abs(token["contribution"] or 0.0) for token in body["tokens"]]
+        assert magnitudes == sorted(magnitudes, reverse=True)
+
+    def test_explain_rejects_unknown_tier(self, client):
+        response = client.post("/v1/explain", json={"text": "hello world", "tier": "platinum"})
+        assert response.status_code == 422
+
+    def test_explain_rejects_blank_text(self, client):
+        assert client.post("/v1/explain", json={"text": "   "}).status_code == 422
+
+
+class TestFeedbackLoop:
+    def test_records_and_lists_correction(self, client):
+        payload = {
+            "text": "the team won the cup final",
+            "corrected_label": "Sports",
+            "predicted_label": "World",
+            "predicted_confidence": 0.41,
+            "tier": "bronze",
+            "reason": "test correction",
+        }
+        response = client.post("/v1/feedback", json=payload)
+        assert response.status_code == 201
+        entry = response.json()
+        assert entry["corrected_label"] == "Sports"
+        assert entry["predicted_label"] == "World"
+        assert entry["id"]
+
+        listed = client.get("/v1/feedback").json()
+        assert len(listed["entries"]) == 1
+        assert listed["entries"][0]["id"] == entry["id"]
+        assert listed["summary"]["total"] == 1
+
+    def test_rejects_an_unknown_label(self, client):
+        payload = {
+            "text": "some copy",
+            "corrected_label": "Politics",
+            "predicted_label": "World",
+            "predicted_confidence": 0.5,
+            "tier": "bronze",
+        }
+        assert client.post("/v1/feedback", json=payload).status_code == 422
+
+    def test_agreement_is_tracked_separately_from_corrections(self, client):
+        def send(predicted: str, corrected: str) -> None:
+            response = client.post(
+                "/v1/feedback",
+                json={
+                    "text": "the team won the cup final",
+                    "corrected_label": corrected,
+                    "predicted_label": predicted,
+                    "predicted_confidence": 0.8,
+                    "tier": "bronze",
+                },
+            )
+            assert response.status_code == 201
+
+        send("Sports", "Sports")  # a confirm
+        send("World", "Sports")  # a fix
+        summary = client.get("/v1/feedback").json()["summary"]
+        assert summary["total"] == 2
+        assert summary["agreement_with_human"] == pytest.approx(0.5)
+        assert summary["by_tier"] == {"bronze": 2}
+
+    def test_rejects_impossible_confidence(self, client):
+        response = client.post(
+            "/v1/feedback",
+            json={
+                "text": "some copy",
+                "corrected_label": "World",
+                "predicted_label": "Sports",
+                "predicted_confidence": 1.4,
+                "tier": "bronze",
+            },
+        )
+        assert response.status_code == 422
+
+    def test_limit_is_validated(self, client):
+        assert client.get("/v1/feedback", params={"limit": 0}).status_code == 422
+
+
+class TestInsights:
+    def test_empty_before_any_traffic(self, client):
+        body = client.get("/v1/insights").json()
+        assert body["empty"] is True
+        assert body["window"]["recent_events"] == 0
+        assert body["label_mix"] == []
+
+    def test_reflects_recent_traffic(self, client):
+        client.post("/v1/predict", json={"text": "stocks rise as the market gains"})
+        response = client.get("/v1/insights")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["empty"] is False
+        assert body["window"]["recent_events"] >= 1
+        assert body["label_mix"]
+        assert "p50_ms" in body["latency"]
+
+    def test_batch_calls_are_counted(self, client):
+        client.post("/v1/predict/batch", json={"texts": ["stocks rise", "the cup final"]})
+        body = client.get("/v1/insights").json()
+        assert body["window"]["recent_events"] == 2
+
+    def test_explanation_requests_are_counted(self, client):
+        client.post("/v1/explain", json={"text": "stocks rise as the market gains"})
+        body = client.get("/v1/insights").json()
+        assert body["window"]["recent_events"] == 1
+
+
+class TestUi:
+    def test_root_serves_the_single_page_ui(self, client):
+        response = client.get("/")
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]
+        assert "Wire Desk" in response.text
+
+    def test_static_assets_are_served(self, client):
+        response = client.get("/static/assets/app.js")
+        assert response.status_code == 200
+        assert "javascript" in response.headers["content-type"]
+        assert "fileStory" in response.text

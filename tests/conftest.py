@@ -147,8 +147,9 @@ def client(artifacts_dir: Path, monkeypatch):
     settings.artifacts_dir = artifacts_dir
     settings.default_tier = "bronze"
 
-    from newsclass.app import create_app
     from fastapi.testclient import TestClient
+
+    from newsclass.app import create_app
 
     app = create_app(settings)
     with TestClient(app) as test_client:
@@ -171,8 +172,9 @@ def empty_client(monkeypatch):
     settings.artifacts_dir = case / "empty"
     settings.default_tier = "gold"
 
-    from newsclass.app import create_app
     from fastapi.testclient import TestClient
+
+    from newsclass.app import create_app
 
     app = create_app(settings)
     with TestClient(app) as test_client:

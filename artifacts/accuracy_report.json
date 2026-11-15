@@ -1,0 +1,925 @@
+{
+  "generated_at": "2026-11-15T14:03:31+00:00",
+  "documents": 1000,
+  "sample": 1000,
+  "gate": {
+    "min_accuracy": 0.85,
+    "min_macro_f1": 0.85,
+    "min_probe_accuracy": 0.7
+  },
+  "tiers": [
+    {
+      "tier": "gold",
+      "documents": 1000,
+      "accuracy": 0.924,
+      "macro_f1": 0.9238,
+      "mean_confidence": 0.9395,
+      "expected_calibration_error": 0.0279,
+      "low_confidence_share": 0.032,
+      "ms_per_100_docs": 18669.38,
+      "per_class": {
+        "World": {
+          "precision": 0.9372,
+          "recall": 0.896,
+          "f1": 0.9162,
+          "support": 250
+        },
+        "Sports": {
+          "precision": 0.9574,
+          "recall": 0.988,
+          "f1": 0.9724,
+          "support": 250
+        },
+        "Business": {
+          "precision": 0.9024,
+          "recall": 0.888,
+          "f1": 0.8952,
+          "support": 250
+        },
+        "Sci/Tech": {
+          "precision": 0.8988,
+          "recall": 0.924,
+          "f1": 0.9112,
+          "support": 250
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "World",
+          "Sports",
+          "Business",
+          "Sci/Tech"
+        ],
+        "rows_are_truth": [
+          [
+            224,
+            8,
+            7,
+            11
+          ],
+          [
+            2,
+            247,
+            1,
+            0
+          ],
+          [
+            10,
+            3,
+            222,
+            15
+          ],
+          [
+            3,
+            0,
+            16,
+            231
+          ]
+        ]
+      }
+    },
+    {
+      "tier": "silver",
+      "documents": 1000,
+      "accuracy": 0.891,
+      "macro_f1": 0.891,
+      "mean_confidence": 0.9389,
+      "expected_calibration_error": 0.0514,
+      "low_confidence_share": 0.034,
+      "ms_per_100_docs": 1145.01,
+      "per_class": {
+        "World": {
+          "precision": 0.875,
+          "recall": 0.896,
+          "f1": 0.8854,
+          "support": 250
+        },
+        "Sports": {
+          "precision": 0.9395,
+          "recall": 0.932,
+          "f1": 0.9357,
+          "support": 250
+        },
+        "Business": {
+          "precision": 0.864,
+          "recall": 0.864,
+          "f1": 0.864,
+          "support": 250
+        },
+        "Sci/Tech": {
+          "precision": 0.8862,
+          "recall": 0.872,
+          "f1": 0.879,
+          "support": 250
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "World",
+          "Sports",
+          "Business",
+          "Sci/Tech"
+        ],
+        "rows_are_truth": [
+          [
+            224,
+            10,
+            8,
+            8
+          ],
+          [
+            7,
+            233,
+            6,
+            4
+          ],
+          [
+            15,
+            3,
+            216,
+            16
+          ],
+          [
+            10,
+            2,
+            20,
+            218
+          ]
+        ]
+      }
+    },
+    {
+      "tier": "bronze",
+      "documents": 1000,
+      "accuracy": 0.899,
+      "macro_f1": 0.8989,
+      "mean_confidence": 0.7801,
+      "expected_calibration_error": 0.1208,
+      "low_confidence_share": 0.172,
+      "ms_per_100_docs": 11.47,
+      "per_class": {
+        "World": {
+          "precision": 0.8784,
+          "recall": 0.896,
+          "f1": 0.8871,
+          "support": 250
+        },
+        "Sports": {
+          "precision": 0.9289,
+          "recall": 0.94,
+          "f1": 0.9344,
+          "support": 250
+        },
+        "Business": {
+          "precision": 0.9,
+          "recall": 0.864,
+          "f1": 0.8816,
+          "support": 250
+        },
+        "Sci/Tech": {
+          "precision": 0.8889,
+          "recall": 0.896,
+          "f1": 0.8924,
+          "support": 250
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "World",
+          "Sports",
+          "Business",
+          "Sci/Tech"
+        ],
+        "rows_are_truth": [
+          [
+            224,
+            12,
+            8,
+            6
+          ],
+          [
+            9,
+            235,
+            3,
+            3
+          ],
+          [
+            12,
+            3,
+            216,
+            19
+          ],
+          [
+            10,
+            3,
+            13,
+            224
+          ]
+        ]
+      }
+    }
+  ],
+  "probes": [
+    {
+      "tier": "gold",
+      "scored": 24,
+      "correct": 24,
+      "accuracy": 1.0,
+      "mean_confidence_out_of_domain": 0.7718,
+      "items": [
+        {
+          "text": "The striker scored a hat-trick as his side won the derby 3-0.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.9702,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "She defended her title in the 100 metres final on Sunday.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.9469,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The coach was sacked after a fifth straight defeat.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.9612,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The marathon world record was broken in Berlin.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.8184,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The league announced a salary cap increase for next season.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.9573,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The tennis champion withdrew from the tournament with a wrist injury.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.9571,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Shares in the airline fell 6% after it cut its profit forecast.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.9562,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The central bank raised interest rates by a quarter point.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.9613,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The retailer reported record quarterly revenue and raised its dividend.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.9653,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The euro slipped against the dollar after the ECB's policy meeting.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.9379,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Bond yields rose after stronger-than-expected jobs data.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.7813,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "A court ruled that the merger could proceed.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.9079,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Apple unveiled a new chip that it says doubles battery life.",
+          "expected": "Sci/Tech",
+          "predicted": "Sci/Tech",
+          "confidence": 0.979,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Researchers published a paper on a faster way to train language models.",
+          "expected": "Sci/Tech",
+          "predicted": "Sci/Tech",
+          "confidence": 0.965,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "A ransomware attack forced hospitals to switch to paper records.",
+          "expected": "Sci/Tech",
+          "predicted": "Sci/Tech",
+          "confidence": 0.9552,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "A probe landed on the moon's south pole and began sending images.",
+          "expected": "Sci/Tech",
+          "predicted": "Sci/Tech",
+          "confidence": 0.9622,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Scientists reported the first image of a black hole's shadow.",
+          "expected": "Sci/Tech",
+          "predicted": "Sci/Tech",
+          "confidence": 0.9601,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "A new open-source tool compiles Python to WebAssembly.",
+          "expected": "Sci/Tech",
+          "predicted": "Sci/Tech",
+          "confidence": 0.9791,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The foreign minister met counterparts in Geneva for peace talks.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.9869,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "A ceasefire was announced after weeks of border clashes.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.9876,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Voters went to the polls in a closely watched general election.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.9637,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The prime minister resigned after losing a confidence vote.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.9696,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Aid agencies warned of famine in the drought-hit region.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.9752,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Protesters gathered outside parliament ahead of the vote.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.985,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Nvidia's data-centre revenue surged as demand for AI chips outpaced supply.",
+          "expected": null,
+          "predicted": "Sci/Tech",
+          "confidence": 0.9686,
+          "correct": null,
+          "note": "ambiguous: business results or technology story"
+        },
+        {
+          "text": "Tesla recalled 50,000 cars over a software fault.",
+          "expected": null,
+          "predicted": "Sci/Tech",
+          "confidence": 0.7978,
+          "correct": null,
+          "note": "ambiguous: business or technology story"
+        },
+        {
+          "text": "The film won the Palme d'Or at Cannes.",
+          "expected": null,
+          "predicted": "World",
+          "confidence": 0.5699,
+          "correct": null,
+          "note": "out of domain: entertainment is not one of the four classes"
+        },
+        {
+          "text": "Whisk the eggs with the sugar until the mixture is pale.",
+          "expected": null,
+          "predicted": "Sci/Tech",
+          "confidence": 0.7507,
+          "correct": null,
+          "note": "out of domain: a recipe, not news"
+        }
+      ]
+    },
+    {
+      "tier": "silver",
+      "scored": 24,
+      "correct": 22,
+      "accuracy": 0.9167,
+      "mean_confidence_out_of_domain": 0.6445,
+      "items": [
+        {
+          "text": "The striker scored a hat-trick as his side won the derby 3-0.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.9862,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "She defended her title in the 100 metres final on Sunday.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.9883,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The coach was sacked after a fifth straight defeat.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.9957,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The marathon world record was broken in Berlin.",
+          "expected": "Sports",
+          "predicted": "World",
+          "confidence": 0.7278,
+          "correct": false,
+          "note": "clear"
+        },
+        {
+          "text": "The league announced a salary cap increase for next season.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.9481,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The tennis champion withdrew from the tournament with a wrist injury.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.9872,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Shares in the airline fell 6% after it cut its profit forecast.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.9946,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The central bank raised interest rates by a quarter point.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.9768,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The retailer reported record quarterly revenue and raised its dividend.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.8857,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The euro slipped against the dollar after the ECB's policy meeting.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.9689,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Bond yields rose after stronger-than-expected jobs data.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.9703,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "A court ruled that the merger could proceed.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.408,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Apple unveiled a new chip that it says doubles battery life.",
+          "expected": "Sci/Tech",
+          "predicted": "Sci/Tech",
+          "confidence": 0.9834,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Researchers published a paper on a faster way to train language models.",
+          "expected": "Sci/Tech",
+          "predicted": "Sci/Tech",
+          "confidence": 0.9933,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "A ransomware attack forced hospitals to switch to paper records.",
+          "expected": "Sci/Tech",
+          "predicted": "World",
+          "confidence": 0.5812,
+          "correct": false,
+          "note": "clear"
+        },
+        {
+          "text": "A probe landed on the moon's south pole and began sending images.",
+          "expected": "Sci/Tech",
+          "predicted": "Sci/Tech",
+          "confidence": 0.4083,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Scientists reported the first image of a black hole's shadow.",
+          "expected": "Sci/Tech",
+          "predicted": "Sci/Tech",
+          "confidence": 0.8861,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "A new open-source tool compiles Python to WebAssembly.",
+          "expected": "Sci/Tech",
+          "predicted": "Sci/Tech",
+          "confidence": 0.8976,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The foreign minister met counterparts in Geneva for peace talks.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.9755,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "A ceasefire was announced after weeks of border clashes.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.5394,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Voters went to the polls in a closely watched general election.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.6913,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The prime minister resigned after losing a confidence vote.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.7211,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Aid agencies warned of famine in the drought-hit region.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.8002,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Protesters gathered outside parliament ahead of the vote.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.991,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Nvidia's data-centre revenue surged as demand for AI chips outpaced supply.",
+          "expected": null,
+          "predicted": "Sci/Tech",
+          "confidence": 0.8618,
+          "correct": null,
+          "note": "ambiguous: business results or technology story"
+        },
+        {
+          "text": "Tesla recalled 50,000 cars over a software fault.",
+          "expected": null,
+          "predicted": "Sci/Tech",
+          "confidence": 0.8181,
+          "correct": null,
+          "note": "ambiguous: business or technology story"
+        },
+        {
+          "text": "The film won the Palme d'Or at Cannes.",
+          "expected": null,
+          "predicted": "Sci/Tech",
+          "confidence": 0.4826,
+          "correct": null,
+          "note": "out of domain: entertainment is not one of the four classes"
+        },
+        {
+          "text": "Whisk the eggs with the sugar until the mixture is pale.",
+          "expected": null,
+          "predicted": "Sci/Tech",
+          "confidence": 0.4155,
+          "correct": null,
+          "note": "out of domain: a recipe, not news"
+        }
+      ]
+    },
+    {
+      "tier": "bronze",
+      "scored": 24,
+      "correct": 21,
+      "accuracy": 0.875,
+      "mean_confidence_out_of_domain": 0.5419,
+      "items": [
+        {
+          "text": "The striker scored a hat-trick as his side won the derby 3-0.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.8649,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "She defended her title in the 100 metres final on Sunday.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.9362,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The coach was sacked after a fifth straight defeat.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.9094,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The marathon world record was broken in Berlin.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.5636,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The league announced a salary cap increase for next season.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.7716,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The tennis champion withdrew from the tournament with a wrist injury.",
+          "expected": "Sports",
+          "predicted": "Sports",
+          "confidence": 0.9101,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Shares in the airline fell 6% after it cut its profit forecast.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.9864,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The central bank raised interest rates by a quarter point.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.8161,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The retailer reported record quarterly revenue and raised its dividend.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.7114,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The euro slipped against the dollar after the ECB's policy meeting.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.5909,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Bond yields rose after stronger-than-expected jobs data.",
+          "expected": "Business",
+          "predicted": "Business",
+          "confidence": 0.8641,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "A court ruled that the merger could proceed.",
+          "expected": "Business",
+          "predicted": "Sci/Tech",
+          "confidence": 0.4024,
+          "correct": false,
+          "note": "clear"
+        },
+        {
+          "text": "Apple unveiled a new chip that it says doubles battery life.",
+          "expected": "Sci/Tech",
+          "predicted": "Sci/Tech",
+          "confidence": 0.956,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Researchers published a paper on a faster way to train language models.",
+          "expected": "Sci/Tech",
+          "predicted": "Sci/Tech",
+          "confidence": 0.8242,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "A ransomware attack forced hospitals to switch to paper records.",
+          "expected": "Sci/Tech",
+          "predicted": "World",
+          "confidence": 0.3563,
+          "correct": false,
+          "note": "clear"
+        },
+        {
+          "text": "A probe landed on the moon's south pole and began sending images.",
+          "expected": "Sci/Tech",
+          "predicted": "Sports",
+          "confidence": 0.3182,
+          "correct": false,
+          "note": "clear"
+        },
+        {
+          "text": "Scientists reported the first image of a black hole's shadow.",
+          "expected": "Sci/Tech",
+          "predicted": "Sci/Tech",
+          "confidence": 0.68,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "A new open-source tool compiles Python to WebAssembly.",
+          "expected": "Sci/Tech",
+          "predicted": "Sci/Tech",
+          "confidence": 0.7326,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The foreign minister met counterparts in Geneva for peace talks.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.8711,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "A ceasefire was announced after weeks of border clashes.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.4693,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Voters went to the polls in a closely watched general election.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.7356,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "The prime minister resigned after losing a confidence vote.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.8139,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Aid agencies warned of famine in the drought-hit region.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.6898,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Protesters gathered outside parliament ahead of the vote.",
+          "expected": "World",
+          "predicted": "World",
+          "confidence": 0.7691,
+          "correct": true,
+          "note": "clear"
+        },
+        {
+          "text": "Nvidia's data-centre revenue surged as demand for AI chips outpaced supply.",
+          "expected": null,
+          "predicted": "Sci/Tech",
+          "confidence": 0.5705,
+          "correct": null,
+          "note": "ambiguous: business results or technology story"
+        },
+        {
+          "text": "Tesla recalled 50,000 cars over a software fault.",
+          "expected": null,
+          "predicted": "Sci/Tech",
+          "confidence": 0.7984,
+          "correct": null,
+          "note": "ambiguous: business or technology story"
+        },
+        {
+          "text": "The film won the Palme d'Or at Cannes.",
+          "expected": null,
+          "predicted": "Sports",
+          "confidence": 0.4258,
+          "correct": null,
+          "note": "out of domain: entertainment is not one of the four classes"
+        },
+        {
+          "text": "Whisk the eggs with the sugar until the mixture is pale.",
+          "expected": null,
+          "predicted": "Sci/Tech",
+          "confidence": 0.3731,
+          "correct": null,
+          "note": "out of domain: a recipe, not news"
+        }
+      ]
+    }
+  ],
+  "passed": true,
+  "failures": []
+}

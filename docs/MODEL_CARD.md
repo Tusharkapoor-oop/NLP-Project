@@ -18,13 +18,15 @@ Routing is by `NEWSCLASS_DEFAULT_TIER`. A caller may request a tier only when
 
 A tier may not serve production traffic until **all** of the following hold:
 
-1. `pytest` passes in full (73+ tests).
+1. `python scripts/run_tests.py` passes in full (97+ tests).
 2. `python scripts/evaluate.py --tier <t> --gate 0.85` passes on the held-out
    test set.
-3. `artifacts/registry.json` contains an entry for the tier with `accuracy`
+3. `python scripts/accuracy_report.py --tier <t>` passes: accuracy and macro-F1
+   above 0.85, per-class scores inspected, and the curated probe set above 70%.
+4. `artifacts/registry.json` contains an entry for the tier with `accuracy`
    and `macro_f1` populated.
-4. `scripts/smoke_test.py` passes against a running container.
-5. The change is recorded in `CHANGELOG.md`.
+5. `scripts/smoke_test.py` passes against a running container.
+6. The change is recorded in `CHANGELOG.md`.
 
 The 0.85 macro-F1 gate is a floor, not a target. It exists to catch a broken
 artifact, not to certify quality.
@@ -51,6 +53,12 @@ artifact, not to certify quality.
 - A trivial baseline (TF-IDF + Logistic Regression) is always reported alongside
   the neural models. On AG News this baseline is genuinely competitive, and
   saying so is part of the analysis.
+- Calibration is measured (expected calibration error, 10 bins) and reported with
+  a confusion matrix and per-class precision/recall/F1. Aggregate accuracy alone
+  is not accepted as evidence of quality.
+- A 24-item hand-written probe set checks realistic headlines and flags
+  out-of-domain copy as unscored. It is intentionally small and readable so every
+  miss can be explained in review.
 
 ## 5. Monitoring in production
 
@@ -79,8 +87,9 @@ require a rebuild.
 
 ## 7. Known limitations (must be disclosed)
 
-- **Truncation.** The gold tier reads only the first 128 sub-word tokens. On long
-  articles most of the document is ignored. Measured and stated in the notebook.
+- **Truncation.** The gold tier reads only the first 64 sub-word tokens (see
+  `artifacts/gold/metrics.json`). On long articles most of the document is
+  ignored. Measured and stated in the notebook.
 - **Single split.** Metrics come from one train/val/test split. No cross-validation
   or multi-seed averaging, so confidence intervals are wider than the point
   estimates suggest.
@@ -89,4 +98,13 @@ require a rebuild.
 - **English only.** The preprocessing and the pre-trained model are English.
 - **Topic taxonomy is fixed** to the four AG News classes. Out-of-scope input is
   still forced into one of them with a confidence score; there is no "unknown"
-  class.
+  class. The audit measures the gap: mean confidence on out-of-domain probes is
+  0.77 for gold and 0.54 for bronze. A production refusal policy needs a dedicated
+  OOD set and a threshold; that is out of scope for this release.
+- **Explanations are evidence, not proof.** Linear contributions are exact; neural
+  saliency is directional. The API names the method in every response, and a
+  failed explanation degrades to `unavailable` rather than failing the prediction.
+- **Feedback is unmoderated training data.** The append-only ledger stores the
+  submitted text and verdict; it is not automatically applied to the model, and it
+  must be reviewed before the next retraining run. Validation errors never echo
+  the submitted document back to the caller.

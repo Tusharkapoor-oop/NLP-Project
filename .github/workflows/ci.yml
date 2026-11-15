@@ -98,6 +98,25 @@ jobs:
           PYTHONPATH: src
         run: python scripts/evaluate.py --tier bronze --sample 500 --gate 0.80
 
+      - name: Accuracy, calibration and probe audit
+        # Stricter than the aggregate release gate: per-class scores, expected
+        # calibration error and the curated probe set, on a stratified sample.
+        # This is the job that fails when the model gets quietly less honest.
+        env:
+          PYTHONPATH: src
+        run: |
+          python scripts/accuracy_report.py --tier bronze --sample 500 \
+            --min-accuracy 0.80 --min-macro-f1 0.80 --min-probe-accuracy 0.70 \
+            --json-out artifacts/accuracy_report.json
+
+      - name: Upload accuracy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accuracy-report
+          path: artifacts/accuracy_report.json
+          if-no-files-found: warn
+
       - name: Boot the API
         env:
           PYTHONPATH: src
@@ -112,6 +131,17 @@ jobs:
 
       - name: Smoke test
         run: python scripts/smoke_test.py --base-url http://127.0.0.1:8000
+
+      - name: Install Playwright browser
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: UI smoke test (real browser)
+        # Boots the same served page, files a story, runs the explanation,
+        # records a correction, compares every ready desk and reads the
+        # signals panel. Fails on console errors or any HTTP >= 400.
+        run: python scripts/ui_smoke.py --base-url http://127.0.0.1:8000 --no-shots
 
   # --------------------------------------------------------------- docker ----
   docker:

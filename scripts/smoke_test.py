@@ -8,7 +8,6 @@ Used in CI after `docker run`, and locally after `uvicorn`.
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 
 import httpx
@@ -77,7 +76,9 @@ def main() -> int:
         check(abs(sum(probs) - 1.0) < 1e-4, "scores sum to 1")
         check(body["label"] == body["scores"][0]["label"], "top label matches first score")
 
-        print(f"  -> predicted '{body['label']}' with {body['confidence']:.1%} on tier '{body['tier']}'")
+        print(
+            f"  -> predicted '{body['label']}' with {body['confidence']:.1%} on tier '{body['tier']}'"
+        )
 
         # --- batch ---
         response = client.post("/v1/predict/batch", json={"texts": SAMPLE_TEXTS})
@@ -93,6 +94,38 @@ def main() -> int:
         response = client.get("/metrics")
         check(response.status_code == 200, "GET /metrics returns 200")
         check("newsclass_predictions_total" in response.text, "prediction counter is exposed")
+
+        # --- explainability ---
+        response = client.post("/v1/explain", json={"text": SAMPLE_TEXTS[2]})
+        check(response.status_code == 200, "POST /v1/explain returns 200")
+        explanation = response.json()
+        check("explanation_method" in explanation, "explanation states its method")
+        check(isinstance(explanation.get("tokens"), list), "explanation returns token evidence")
+
+        # --- feedback ledger (read-only) ---
+        response = client.get("/v1/feedback")
+        check(response.status_code == 200, "GET /v1/feedback returns 200")
+        feedback = response.json()
+        check(
+            "entries" in feedback and "summary" in feedback, "feedback ledger is shaped correctly"
+        )
+
+        # --- live insights ---
+        response = client.get("/v1/insights")
+        check(response.status_code == 200, "GET /v1/insights returns 200")
+        insights = response.json()
+        check("window" in insights, "insights expose their traffic window")
+        check(insights.get("empty") is False, "insights reflect the predictions just made")
+
+        # --- the shipped UI and its assets ---
+        response = client.get("/")
+        check(response.status_code == 200, "GET / returns the single-page UI")
+        check("Wire Desk" in response.text, "UI markup is present")
+        response = client.get("/static/assets/app.js")
+        check(response.status_code == 200, "UI JavaScript asset is served")
+        check("fileStory" in response.text, "UI asset is the real application script")
+        response = client.get("/static/assets/styles.css")
+        check(response.status_code == 200, "UI stylesheet is served")
 
         # --- consistency across tiers ---
         ready_tiers = {t["tier"] for t in tiers if t["ready"]}

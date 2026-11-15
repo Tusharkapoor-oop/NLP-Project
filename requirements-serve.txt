@@ -11,8 +11,20 @@ numpy>=1.24
 joblib>=1.3
 pandas>=2.0
 pyyaml>=6.0
-fastapi>=0.110
+
+# --- HTTP stack -------------------------------------------------------------
+# FastAPI and Starlette are version-coupled: FastAPI's Router passes arguments
+# (on_startup/on_shutdown) that Starlette 1.x removed. Mixing an old FastAPI
+# with a new Starlette fails at import time with
+#   TypeError: Router.__init__() got an unexpected keyword argument 'on_startup'
+# so the floor below is deliberate, not cosmetic.
+fastapi>=0.163
+starlette>=1.0,<2
 uvicorn>=0.27
 pydantic>=2.5
 pydantic-settings>=2.0
+
+# Metrics. Optional at runtime: newsclass.metrics ships a built-in fallback that
+# renders the same exposition format, so a missing package degrades instead of
+# taking the service down. Installing it is still recommended for production.
 prometheus-client>=0.19

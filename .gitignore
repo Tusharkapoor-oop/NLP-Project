@@ -45,3 +45,10 @@ artifacts/*/_trainer/
 .DS_Store
 Thumbs.db
 .acl_recovery/
+
+# Agent skills and local configurations (do not commit)
+.agents/
+.agent/
+
+# Runtime interaction data (not a model artifact)
+artifacts/feedback.jsonl

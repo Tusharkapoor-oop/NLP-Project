@@ -99,7 +99,11 @@ def load_split(rows: int = TRAIN_ROWS):
     val_df, test_df = train_test_split(
         rest, test_size=0.5, random_state=SEED, stratify=rest["label"]
     )
-    return train_df.reset_index(drop=True), val_df.reset_index(drop=True), test_df.reset_index(drop=True)
+    return (
+        train_df.reset_index(drop=True),
+        val_df.reset_index(drop=True),
+        test_df.reset_index(drop=True),
+    )
 
 
 def _evaluate_predictions(y_true, y_pred) -> tuple[float, float]:
@@ -169,10 +173,10 @@ def train_bronze(out_dir: Path) -> TierMetrics:
 # SILVER: Word2Vec (CBOW) + BiLSTM
 # ---------------------------------------------------------------------------
 def train_silver(out_dir: Path) -> TierMetrics:
-    import torch
-    import torch.nn as nn
     from collections import Counter
 
+    import torch
+    import torch.nn as nn
     from gensim.models import Word2Vec
     from torch.utils.data import DataLoader, Dataset
 
@@ -182,7 +186,9 @@ def train_silver(out_dir: Path) -> TierMetrics:
 
     train_df, val_df, test_df = load_split()
     for frame in (train_df, val_df, test_df):
-        frame["tokens"] = frame["text"].map(lambda t: tokenize(t, use_stopwords=True, use_lemma=True))
+        frame["tokens"] = frame["text"].map(
+            lambda t: tokenize(t, use_stopwords=True, use_lemma=True)
+        )
     train_df = train_df[train_df["tokens"].map(len) > 0].reset_index(drop=True)
 
     counts = Counter(token for tokens in train_df["tokens"] for token in tokens)
@@ -225,7 +231,7 @@ def train_silver(out_dir: Path) -> TierMetrics:
             return torch.tensor(self.x[i]), torch.tensor(self.y[i])
 
     def _collate(batch):
-        seqs, labels = zip(*batch)
+        seqs, labels = zip(*batch, strict=False)
         return (
             nn.utils.rnn.pad_sequence(seqs, batch_first=True, padding_value=0),
             torch.stack(labels),
@@ -421,8 +427,13 @@ def train_gold(out_dir: Path, epochs: int = 2, rows: int = 6000) -> TierMetrics:
     macro_f1 = float(f1_score(predictions.label_ids, preds, average="macro"))
 
     model.eval()
-    batch = tokenizer([test_df["text"].iloc[0]] * 100, truncation=True, max_length=max_length,
-                      return_tensors="pt", padding=True)
+    batch = tokenizer(
+        [test_df["text"].iloc[0]] * 100,
+        truncation=True,
+        max_length=max_length,
+        return_tensors="pt",
+        padding=True,
+    )
     with torch.no_grad():
         t0 = time.perf_counter()
         model(**batch)
@@ -480,9 +491,7 @@ def write_registry(artifacts_dir: Path) -> dict[str, Any]:
         },
         "tiers": entries,
     }
-    (artifacts_dir / "registry.json").write_text(
-        json.dumps(registry, indent=2), encoding="utf-8"
-    )
+    (artifacts_dir / "registry.json").write_text(json.dumps(registry, indent=2), encoding="utf-8")
     return registry
 
 
@@ -511,9 +520,14 @@ def main() -> None:
             metrics = builder(out_dir, epochs=args.gold_epochs, rows=args.gold_rows)
         else:
             metrics = builder(out_dir)
-        (out_dir / "metrics.json").write_text(json.dumps(metrics.to_dict(), indent=2), encoding="utf-8")
-        print(f"  accuracy={metrics.accuracy} macro_f1={metrics.macro_f1} "
-              f"({metrics.train_seconds}s, {metrics.size_mb} MB)", flush=True)
+        (out_dir / "metrics.json").write_text(
+            json.dumps(metrics.to_dict(), indent=2), encoding="utf-8"
+        )
+        print(
+            f"  accuracy={metrics.accuracy} macro_f1={metrics.macro_f1} "
+            f"({metrics.train_seconds}s, {metrics.size_mb} MB)",
+            flush=True,
+        )
 
     registry = write_registry(artifacts_dir)
     print(f"\nregistry written: {artifacts_dir / 'registry.json'}")

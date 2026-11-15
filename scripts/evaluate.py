@@ -28,11 +28,11 @@ os.environ.setdefault("HF_HOME", str(PROJECT_ROOT / ".hf_cache"))
 os.environ.setdefault("HF_DATASETS_CACHE", str(PROJECT_ROOT / ".hf_cache" / "datasets"))
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
-from sklearn.metrics import accuracy_score, classification_report, f1_score
+from sklearn.metrics import accuracy_score, classification_report, f1_score  # noqa: E402
 
-from newsclass.config import env_artifacts_dir
-from newsclass.registry import ModelRegistry
-from newsclass.train import LABEL_NAMES, load_split
+from newsclass.config import env_artifacts_dir  # noqa: E402
+from newsclass.registry import ModelRegistry  # noqa: E402
+from newsclass.train import LABEL_NAMES, load_split  # noqa: E402
 
 
 def evaluate_tier(registry: ModelRegistry, tier: str, sample: int, artifacts: Path) -> dict:
@@ -93,6 +93,15 @@ def main() -> int:
         print(f"No trained tiers found in {artifacts}", file=sys.stderr)
         return 2
 
+    if args.tier != "all" and args.tier not in available:
+        print(
+            f"No artifacts for tier '{args.tier}' in {artifacts} "
+            f"(available: {', '.join(available)}). Train it first: "
+            f"python -m newsclass.train --tier {args.tier}",
+            file=sys.stderr,
+        )
+        return 2
+
     tiers = available if args.tier == "all" else [args.tier]
     results = []
     failures = []
@@ -120,11 +129,17 @@ def main() -> int:
         print(f"\nwrote {args.json_out}")
 
     if args.gate is not None:
+        if not results:
+            print(
+                "GATE FAILED: no tier produced an evaluation result "
+                f"(failures: {', '.join(failures) or 'none'})",
+                file=sys.stderr,
+            )
+            return 1
         for result in results:
             if result["macro_f1"] < args.gate:
                 print(
-                    f"GATE FAILED: {result['tier']} macro_f1={result['macro_f1']} "
-                    f"< {args.gate}",
+                    f"GATE FAILED: {result['tier']} macro_f1={result['macro_f1']} < {args.gate}",
                     file=sys.stderr,
                 )
                 return 1

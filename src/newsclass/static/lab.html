@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Model Lab · Wire Desk</title>
+  <meta name="description" content="Run the bronze, silver and gold news classifiers independently on the same copy and compare their labels, probabilities, latency and explanations." />
+  <link rel="stylesheet" href="/static/assets/styles.css" />
+  <link rel="stylesheet" href="/static/assets/lab.css" />
+</head>
+<body class="lab-page">
+  <a class="skip-link" href="#bench">Skip to the model bench</a>
+
+  <header class="nav" id="nav">
+    <a class="brand" href="/" aria-label="Wire Desk home">
+      <span class="brand-mark" aria-hidden="true">W</span>
+      <span class="brand-name">Wire&nbsp;Desk</span>
+      <span class="brand-tag mono">lab</span>
+    </a>
+
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#bench">Bench</a>
+      <a href="#results">Results</a>
+      <a href="#notes">Notes</a>
+    </nav>
+
+    <a class="btn btn-ghost lab-back" href="/">← Back to the desk</a>
+
+    <div class="nav-status" id="status-pill" title="Service readiness">
+      <span class="lamp" id="lamp"></span>
+      <span id="status-text">connecting</span>
+    </div>
+  </header>
+
+  <main class="lab-main" id="top">
+
+    <section class="lab-hero" aria-labelledby="lab-title">
+      <p class="section-index mono">Model Lab</p>
+      <h1 id="lab-title">Three desks. One paragraph.<br /><em>No hiding the disagreement.</em></h1>
+      <p class="lab-lede">
+        This is the test bench. Each model is called independently on exactly the
+        same text, and every card reports its own label, full probability
+        distribution, server time and round-trip time. Nothing is averaged away,
+        and a fallback is named rather than disguised.
+      </p>
+      <dl class="lab-facts">
+        <div><dt>Desks</dt><dd class="mono">03</dd></div>
+        <div><dt>Topics</dt><dd class="mono">04</dd></div>
+        <div><dt>Shared preprocessing</dt><dd class="mono">01</dd></div>
+      </dl>
+    </section>
+
+    <section class="card lab-bench" id="bench" aria-labelledby="bench-title">
+      <div class="card-head">
+        <h2 class="card-label" id="bench-title">Test copy</h2>
+        <span class="char-count mono" id="lab-count">0 / 20000</span>
+      </div>
+
+      <label class="sr-only" for="lab-copy">News text to test every model with</label>
+      <textarea id="lab-copy" maxlength="20000" spellcheck="true"
+        placeholder="Paste a headline or lead paragraph. Every desk will classify this exact text.">Tesla recalled 50,000 cars over a software fault, its second recall this quarter, and said the fix would be delivered over the air.</textarea>
+
+      <div class="lab-samples" aria-label="Example stories">
+        <span class="mono dim lab-samples-label">Try</span>
+        <div class="samples" id="lab-samples"></div>
+      </div>
+
+      <div class="lab-controls">
+        <button class="btn btn-primary" id="lab-run-all" type="button">
+          <span class="btn-label">Run all three desks</span>
+        </button>
+        <button class="btn btn-quiet" id="lab-clear" type="button">Clear</button>
+        <p class="hint mono"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> to run · gold may cold-start</p>
+      </div>
+
+      <p class="lab-inline-error" id="lab-inline-error" role="alert" hidden></p>
+    </section>
+
+    <section class="lab-summary" id="results" aria-labelledby="results-title" aria-live="polite">
+      <h2 class="sr-only" id="results-title">Comparison summary</h2>
+      <div class="lab-summary-item">
+        <span class="mono dim">Agreement</span>
+        <strong id="sum-agreement">—</strong>
+      </div>
+      <div class="lab-summary-item">
+        <span class="mono dim">Fastest desk</span>
+        <strong id="sum-fastest" class="mono">—</strong>
+      </div>
+      <div class="lab-summary-item">
+        <span class="mono dim">Confidence spread</span>
+        <strong id="sum-spread" class="mono">—</strong>
+      </div>
+      <div class="lab-summary-item">
+        <span class="mono dim">Calls this page</span>
+        <strong id="sum-calls" class="mono">0</strong>
+      </div>
+    </section>
+
+    <section class="lab-results" aria-label="Model results">
+      <div class="lab-grid" id="lab-grid" aria-busy="true">
+        <p class="lab-loading mono">loading desks…</p>
+      </div>
+    </section>
+
+    <section class="lab-notes" id="notes" aria-labelledby="notes-title">
+      <p class="section-index mono">Notes</p>
+      <h2 id="notes-title">What this page actually tests</h2>
+      <div class="lab-notes-grid">
+        <div>
+          <h3>Independent calls</h3>
+          <p>
+            Each card is a separate <code>POST /v1/predict</code> with a tier
+            override. No result is copied from its neighbour, so the comparison
+            reflects three real inferences.
+          </p>
+        </div>
+        <div>
+          <h3>Two latencies</h3>
+          <p>
+            “Server” is the model's own <code>predict_proba</code> time. “Round
+            trip” adds HTTP, JSON and the browser on this machine. Neither is a
+            benchmark, but the gap between them is real.
+          </p>
+        </div>
+        <div>
+          <h3>Honest fallback</h3>
+          <p>
+            If a tier is not installed, the API serves the best available desk.
+            The card names the desk that actually answered instead of pretending
+            the requested one did.
+          </p>
+        </div>
+        <div>
+          <h3>Not an accuracy claim</h3>
+          <p>
+            A handful of paragraphs is a smoke test. Published accuracy comes
+            from the stratified held-out audit: gold 92.4%, silver 89.1%, bronze
+            89.9%, each with its own calibration error.
+          </p>
+        </div>
+      </div>
+      <p class="lab-api mono dim">
+        API ·
+        <a href="/docs" target="_blank" rel="noopener">/docs</a> ·
+        <a href="/v1/tiers" target="_blank" rel="noopener">/v1/tiers</a> ·
+        <a href="/metrics" target="_blank" rel="noopener">/metrics</a>
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <span>Wire Desk · Model Lab · <span class="mono" id="lab-version">v1.1.0</span></span>
+      <span class="dim">FastAPI · scikit-learn · PyTorch · transformers</span>
+      <span class="mono dim" id="lab-backend">metrics: —</span>
+    </div>
+  </footer>
+
+  <noscript>
+    <p class="lab-noscript">
+      The lab needs JavaScript. The API it calls still works without it:
+      <code>POST /v1/predict</code> with a <code>tier</code> field.
+    </p>
+  </noscript>
+
+  <script src="/static/vendor/gsap.min.js"></script>
+  <script type="module" src="/static/assets/lab.js"></script>
+</body>
+</html>

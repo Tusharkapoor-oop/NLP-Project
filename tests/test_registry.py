@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import pytest
 
-from newsclass.registry import ModelRegistry, RegistryError
-
 # Reuse conftest's scratch-directory helper (it does not rely on pytest's
 # tmp_path machinery; see the note in conftest.py).
 from conftest import _fresh_case_dir, _remove_quietly
+
+from newsclass.registry import ModelRegistry, RegistryError
 
 
 class TestMetadataLoading:
