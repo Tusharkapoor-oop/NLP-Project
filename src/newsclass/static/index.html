@@ -405,12 +405,11 @@
   </div>
 </footer>
 
-<!-- Classic scripts first so the globals exist before the module runs. -->
+<!-- Classic scripts first so the globals exist before the module runs. Each is
+     optional: app.js feature-detects its globals and degrades to CSS/DOM. -->
 <script src="/static/vendor/gsap.min.js"></script>
 <script src="/static/vendor/ScrollTrigger.min.js"></script>
 <script src="/static/vendor/ScrollToPlugin.min.js"></script>
-<script src="/static/vendor/Flip.min.js"></script>
-<script src="/static/vendor/Observer.min.js"></script>
 <script src="/static/vendor/motion.min.js"></script>
 <script src="/static/vendor/three.min.js"></script>
 <script type="module" src="/static/assets/app.js"></script>

@@ -7,7 +7,9 @@
    is unavailable, the CSS fallback takes over.
 
    Scripts loaded before this module (UMD globals): THREE, gsap, ScrollTrigger,
-   ScrollToPlugin, Flip, Observer, Motion.
+   ScrollToPlugin, Motion. Every one of them is optional: the module checks for
+   its globals before use and degrades to plain CSS/DOM behaviour, so the page
+   remains fully usable with scripts blocked or on a low-end device.
    ========================================================================== */
 
 (() => {
@@ -363,10 +365,105 @@
     targets.forEach((el) => observer.observe(el));
   }
 
+  /* Scroll-linked motion.
+     ---------------------------------------------------------------------
+     IntersectionObserver (above) decides *whether* something has appeared;
+     ScrollTrigger decides *how much* the page has moved, which is what makes
+     parallax and scrubbed progress possible. It is used only as an
+     enhancement: without the plugin, or with reduced motion requested, every
+     element is left in its final CSS state and nothing is pinned or hidden. */
+  function initScrollScene() {
+    if (REDUCED || !window.gsap || !window.ScrollTrigger) return;
+    const { gsap: g, ScrollTrigger: ST } = window;
+    g.registerPlugin(ST);
+
+    // Hero: the copy drifts up and fades as the desk scrolls into view. Small
+    // numbers on purpose — parallax should be felt, not watched.
+    const hero = document.querySelector(".hero-inner");
+    if (hero) {
+      g.to(hero, {
+        yPercent: -12,
+        autoAlpha: 0.25,
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".hero",
+          start: "top top",
+          end: "bottom top",
+          scrub: 0.6,
+        },
+      });
+    }
+
+    // The 3D field recedes in step with the hero so the two move as one plane.
+    const canvas = $("scene-canvas");
+    if (canvas) {
+      g.to(canvas, {
+        yPercent: 10,
+        autoAlpha: 0.35,
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".hero",
+          start: "top top",
+          end: "bottom top",
+          scrub: 0.8,
+        },
+      });
+    }
+
+    // Section headings settle in from the left — a reading cue, not a flourish.
+    $$(".section-head h2").forEach((heading) => {
+      g.from(heading, {
+        x: -22,
+        autoAlpha: 0,
+        duration: 0.7,
+        ease: "power3.out",
+        scrollTrigger: { trigger: heading, start: "top 88%", once: true },
+      });
+    });
+
+    // Static grids deal their cards in with a slight lift and stagger.
+    // Only containers whose children exist at init belong here: #desks-grid is
+    // filled from the registry response, so its cards are animated in
+    // renderDesks() once they actually exist.
+    [".insight-grid", ".method-steps"].forEach((selector) => {
+      const grid = document.querySelector(selector);
+      if (!grid) return;
+      const cards = Array.from(grid.children);
+      if (!cards.length) return;
+      g.from(cards, {
+        y: 24,
+        autoAlpha: 0,
+        duration: 0.55,
+        ease: "power2.out",
+        stagger: 0.08,
+        scrollTrigger: { trigger: grid, start: "top 86%", once: true },
+      });
+    });
+
+    // The method rail fills in proportion to how far it has been read, which
+    // reads as progress rather than as a bar that simply appeared.
+    const rail = $("method-progress");
+    const board = document.querySelector(".method-board");
+    if (rail && board) {
+      g.fromTo(
+        rail,
+        { width: "0%" },
+        {
+          width: "100%",
+          ease: "none",
+          scrollTrigger: { trigger: board, start: "top 72%", end: "bottom 62%", scrub: 0.4 },
+        },
+      );
+    }
+
+    // Geometry changes (fonts, images, the insights grid filling in) move the
+    // trigger points, so recalculate once the page has settled.
+    window.addEventListener("load", () => ST.refresh(), { once: true });
+  }
+
   function initNav() {
     const nav = $("nav");
-    const bar = $("scroll-progress");
-    // Only in-page anchors: the nav also links to /lab, which is a route,
+    const bar = $("scroll-progress");    // Only in-page anchors: the nav also links to /lab, which is a route,
     // not a selector. Passing it to querySelector would throw and abort init.
     const links = $$('.nav-links a[href^="#"]');
     const sections = links
@@ -503,6 +600,25 @@
         </article>`;
       })
       .join("");
+
+    // The skeleton is gone and the real cards are in the DOM: this is the
+    // earliest moment they can be animated. If ScrollTrigger is present the
+    // deal-in waits until the grid is actually on screen; otherwise the cards
+    // simply appear, which is the correct non-animated behaviour.
+    const cards = Array.from(grid.children);
+    if (!cards.length || REDUCED || !window.gsap) return;
+    if (window.ScrollTrigger) {
+      gsap.from(cards, {
+        y: 22,
+        autoAlpha: 0,
+        duration: 0.5,
+        ease: "power2.out",
+        stagger: 0.09,
+        scrollTrigger: { trigger: grid, start: "top 88%", once: true },
+      });
+    } else {
+      gsap.from(cards, { autoAlpha: 0, y: 16, duration: 0.45, stagger: 0.07, ease: "power2.out" });
+    }
   }
 
   function populateFeedbackLabels() {
@@ -1004,6 +1120,16 @@
     if (!steps.length) return;
     const counters = $$("[data-count]");
 
+    // Ownership of the rail is exclusive. When ScrollTrigger is driving it
+    // (initScrollScene), it scrubs the width continuously and this function
+    // must not also write it per active step — two writers on one property
+    // produce a bar that jitters between the two values. So the rail is
+    // scroll-driven when available, and step-driven only as the fallback.
+    const railDrivenByScroll = Boolean(!REDUCED && window.gsap && window.ScrollTrigger);
+    const setRail = (width) => {
+      if (progress && !railDrivenByScroll) progress.style.width = width;
+    };
+
     const startCounter = (el) => {
       if (el.dataset.started) return;
       el.dataset.started = "true";
@@ -1033,7 +1159,7 @@
     if (!("IntersectionObserver" in window)) {
       counters.forEach(startCounter);
       steps.forEach((step) => step.classList.add("is-active"));
-      if (progress) progress.style.width = "100%";
+      setRail("100%");
       return;
     }
 
@@ -1043,7 +1169,7 @@
         const index = steps.indexOf(entry.target);
         entry.target.classList.add("is-active");
         const stepCount = steps.filter((step) => step.classList.contains("is-active")).length;
-        if (progress) progress.style.width = ((stepCount / steps.length) * 100).toFixed(1) + "%";
+        setRail(((stepCount / steps.length) * 100).toFixed(1) + "%");
         if (index >= 0) {
           const counter = entry.target.querySelector("[data-count]");
           if (counter) startCounter(counter);
@@ -1166,6 +1292,7 @@
     initMagnetic();
     initHero();
     initReveal();
+    initScrollScene();
     initNav();
     initSamples();
     initTicker();

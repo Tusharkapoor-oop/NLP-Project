@@ -14,11 +14,19 @@ VENDOR_SCRIPTS = [
     "gsap.min.js",
     "ScrollTrigger.min.js",
     "ScrollToPlugin.min.js",
-    "Flip.min.js",
-    "Observer.min.js",
     "motion.min.js",
     "three.min.js",
 ]
+
+# The globals each vendored script exposes, used to prove the page actually
+# calls the library instead of merely downloading it.
+VENDOR_GLOBALS = {
+    "gsap.min.js": "gsap",
+    "ScrollTrigger.min.js": "ScrollTrigger",
+    "ScrollToPlugin.min.js": "ScrollToPlugin",
+    "motion.min.js": "Motion",
+    "three.min.js": "THREE",
+}
 
 
 @pytest.fixture()
@@ -38,6 +46,40 @@ class TestOfflineAssets:
     def test_every_vendor_script_is_loaded_locally(self, html):
         for script in VENDOR_SCRIPTS:
             assert f"/static/vendor/{script}" in html, f"{script} is not referenced by the page"
+
+    def test_no_unused_vendor_script_is_loaded(self, client):
+        """A library that is downloaded but never called is pure page weight.
+
+        This caught GSAP Flip and Observer shipping on every page load while
+        nothing referenced them. Strip comments first, so a mention in a
+        documentation block cannot masquerade as a use.
+        """
+        import re
+
+        html = client.get("/").text
+        js = client.get("/static/assets/app.js").text
+        lab_js = client.get("/static/assets/lab.js").text
+
+        def strip_comments(source: str) -> str:
+            source = re.sub(r"/\*.*?\*/", "", source, flags=re.S)
+            return re.sub(r"(?m)^\s*//.*$", "", source)
+
+        code = strip_comments(js) + strip_comments(lab_js)
+
+        for script in VENDOR_SCRIPTS:
+            assert f"/static/vendor/{script}" in html, script
+            global_name = VENDOR_GLOBALS[script]
+            assert re.search(rf"\b{global_name}\b", code), (
+                f"{script} is loaded by the page but never used in code; "
+                "drop the script tag and the file"
+            )
+
+    def test_removed_libraries_are_really_gone(self, client):
+        """Guards against a re-added script tag or a stale vendored file."""
+        html = client.get("/").text
+        for stale in ("Flip.min.js", "Observer.min.js"):
+            assert stale not in html, f"{stale} was removed; do not load it again"
+            assert client.get(f"/static/vendor/{stale}").status_code == 404
 
     def test_vendor_notice_documents_the_versions(self, client):
         notice = client.get("/static/vendor/NOTICE.md")
