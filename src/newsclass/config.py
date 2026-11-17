@@ -39,6 +39,19 @@ class Settings(BaseSettings):
     # Fail fast at startup instead of accepting traffic we cannot serve.
     require_default_tier: bool = True
 
+    # Which tiers to load into memory at boot, on top of the default one.
+    #
+    # Only the default tier is warmed by default, because the gold model is
+    # ~255 MB and loading it costs ~39 s on this CPU — paying that at boot for
+    # traffic that never uses it would be wasteful. The cost is that the *first*
+    # request for an unwarmed tier waits for that load, which is a real
+    # production concern: a client with a 30 s timeout would fail.
+    #
+    # Set this (e.g. NEWSCLASS_PRELOAD_TIERS="bronze,silver,gold") when the
+    # instance must answer any tier immediately, or point a load balancer's
+    # readiness check at a warmed instance.
+    preload_tiers: str = ""
+
     artifacts_dir: Path = PROJECT_ROOT / "artifacts"
     registry_filename: str = "registry.json"
 
@@ -74,6 +87,27 @@ class Settings(BaseSettings):
         if lowered not in allowed:
             raise ValueError(f"environment must be one of {sorted(allowed)}")
         return lowered
+
+    @field_validator("preload_tiers")
+    @classmethod
+    def _valid_preload(cls, value: str) -> str:
+        """Reject unknown tier names at startup.
+
+        A typo here would silently never warm a tier — the exact failure this
+        setting exists to prevent — so it is a startup error, not a warning.
+        """
+        allowed = {"bronze", "silver", "gold"}
+        names = [part.strip().lower() for part in value.split(",") if part.strip()]
+        unknown = sorted(set(names) - allowed)
+        if unknown:
+            raise ValueError(f"preload_tiers contains unknown tiers: {unknown}")
+        return value
+
+    @property
+    def preload_tier_list(self) -> tuple[str, ...]:
+        """``preload_tiers`` parsed into an ordered, de-duplicated tuple."""
+        names = [part.strip().lower() for part in self.preload_tiers.split(",") if part.strip()]
+        return tuple(dict.fromkeys(names))
 
     @property
     def is_production(self) -> bool:

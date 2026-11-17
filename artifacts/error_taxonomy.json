@@ -1,0 +1,432 @@
+{
+  "generated_at": "2026-11-17T04:37:02+00:00",
+  "documents": 200,
+  "tiers": [
+    {
+      "tier": "gold",
+      "documents": 200,
+      "correct": 185,
+      "wrong": 15,
+      "accuracy": 0.925,
+      "max_tokens_read": 64,
+      "token_length": {
+        "mean": 52.6,
+        "p50": 50,
+        "p95": 83,
+        "max": 130
+      },
+      "failure_categories": [
+        {
+          "category": "near_miss_boundary",
+          "count": 11,
+          "share_of_errors": 0.7333,
+          "examples": [
+            {
+              "text": "BearingPoint Wins ID Project at TSA BearingPoint Inc. of McLean won a \\$12 million contract from the Transportation Security Administration to begin the third phase in the agency's program to create a standard identification card for U.S. transportation employees.",
+              "truth": "Sci/Tech",
+              "predicted": "Business",
+              "confidence": 0.8707,
+              "tokens": 53
+            },
+            {
+              "text": "New York bans rally against Bush New York bans a huge rally against President Bush before the Republican Convention on environmental grounds.",
+              "truth": "World",
+              "predicted": "Sci/Tech",
+              "confidence": 0.422,
+              "tokens": 27
+            },
+            {
+              "text": "Circuit City to host Verizon Wireless stores Circuit City Stores Inc. and Verizon Wireless signed an agreement to install Verizon Wireless stores in more than 570 Circuit City Superstores around the country, they said Monday.",
+              "truth": "Business",
+              "predicted": "Sci/Tech",
+              "confidence": 0.935,
+              "tokens": 48
+            }
+          ]
+        },
+        {
+          "category": "long_document",
+          "count": 2,
+          "share_of_errors": 0.1333,
+          "examples": [
+            {
+              "text": "FDA to Inspect Boston Scientific Stent Plant -WSJ (Reuters) Reuters - The U.S. Food and Drug Administration\\expects to inspect Boston Scientific Corp.'s Galway, Ireland\\factory in the \"near future\" as part of its probe into the\\company's coronary stent recall, the Wall Street Jou",
+              "truth": "Sci/Tech",
+              "predicted": "Business",
+              "confidence": 0.8518,
+              "tokens": 75
+            },
+            {
+              "text": "Advanced Neuromodulation takes stake in Cyberonics CHICAGO, Aug 20 (Reuters) - Advanced Neuromodulation Systems (ANSI.O: Quote, Profile, Research) on Friday said it took an equity stake in Cyberonics Inc. (CYBX.O: Quote, Profile, Research) and initiated discussions about combinin",
+              "truth": "Business",
+              "predicted": "Sci/Tech",
+              "confidence": 0.7429,
+              "tokens": 77
+            }
+          ]
+        },
+        {
+          "category": "other",
+          "count": 1,
+          "share_of_errors": 0.0667,
+          "examples": [
+            {
+              "text": "China offended by Nike advertisement China has voiced its anger over a Nike advertisement in which a US basketball star fights off a series of ancient Chinese characters.",
+              "truth": "Sports",
+              "predicted": "World",
+              "confidence": 0.3326,
+              "tokens": 31
+            }
+          ]
+        },
+        {
+          "category": "confident_error",
+          "count": 1,
+          "share_of_errors": 0.0667,
+          "examples": [
+            {
+              "text": "Patchwork of FTAs won #39;t do - Doha Round crucial WORLD Trade Organisation (WTO) members have finally established a framework for negotiations to conclude the Doha Round. This is good news.",
+              "truth": "Sci/Tech",
+              "predicted": "Business",
+              "confidence": 0.962,
+              "tokens": 43
+            }
+          ]
+        }
+      ],
+      "slices": {
+        "by_length": [
+          {
+            "name": "short (<=45 tokens)",
+            "documents": 69,
+            "accuracy": 0.8986,
+            "mean_confidence": 0.9254
+          },
+          {
+            "name": "medium",
+            "documents": 64,
+            "accuracy": 0.9062,
+            "mean_confidence": 0.9629
+          },
+          {
+            "name": "long (>57 tokens)",
+            "documents": 67,
+            "accuracy": 0.9701,
+            "mean_confidence": 0.9576
+          }
+        ],
+        "by_class": [
+          {
+            "name": "class: World",
+            "documents": 60,
+            "accuracy": 0.9667,
+            "mean_confidence": 0.9729
+          },
+          {
+            "name": "class: Sports",
+            "documents": 53,
+            "accuracy": 0.9623,
+            "mean_confidence": 0.9554
+          },
+          {
+            "name": "class: Business",
+            "documents": 43,
+            "accuracy": 0.8605,
+            "mean_confidence": 0.9418
+          },
+          {
+            "name": "class: Sci/Tech",
+            "documents": 44,
+            "accuracy": 0.8864,
+            "mean_confidence": 0.9123
+          }
+        ],
+        "by_shape": [
+          {
+            "name": "headline-shaped (<3 sentences)",
+            "documents": 160,
+            "accuracy": 0.9313,
+            "mean_confidence": 0.9494
+          },
+          {
+            "name": "article-shaped (>=3 sentences)",
+            "documents": 40,
+            "accuracy": 0.9,
+            "mean_confidence": 0.9437
+          }
+        ]
+      },
+      "truncates_input": true
+    },
+    {
+      "tier": "silver",
+      "documents": 200,
+      "correct": 182,
+      "wrong": 18,
+      "accuracy": 0.91,
+      "max_tokens_read": 64,
+      "token_length": {
+        "mean": 58.9,
+        "p50": 59,
+        "p95": 85,
+        "max": 146
+      },
+      "failure_categories": [
+        {
+          "category": "near_miss_boundary",
+          "count": 12,
+          "share_of_errors": 0.6667,
+          "examples": [
+            {
+              "text": "Yahoo Unveils Budget Domains Deal Domain hosting and parking services drop in price, rise in capacity to lure small businesses.",
+              "truth": "Sci/Tech",
+              "predicted": "Business",
+              "confidence": 0.7064,
+              "tokens": 31
+            },
+            {
+              "text": "Major Rathore is a perfectionist to the core A man of words, commitment and warmth. Rajyvardhan Singh Rathore combines all these qualities. And he, of course, is one of the most talented shooters of recent times. ",
+              "truth": "Sports",
+              "predicted": "Sci/Tech",
+              "confidence": 0.5113,
+              "tokens": 53
+            },
+            {
+              "text": "Canada set to press US on softwood VANCOUVER -- Canada will step up political pressure on the US government to drop punitive duties on Canadian softwood lumber imports in the wake of a pivotal trade ruling.",
+              "truth": "Business",
+              "predicted": "World",
+              "confidence": 0.8788,
+              "tokens": 51
+            }
+          ]
+        },
+        {
+          "category": "long_document",
+          "count": 5,
+          "share_of_errors": 0.2778,
+          "examples": [
+            {
+              "text": "FDA to Inspect Boston Scientific Stent Plant -WSJ (Reuters) Reuters - The U.S. Food and Drug Administration\\expects to inspect Boston Scientific Corp.'s Galway, Ireland\\factory in the \"near future\" as part of its probe into the\\company's coronary stent recall, the Wall Street Jou",
+              "truth": "Sci/Tech",
+              "predicted": "Business",
+              "confidence": 0.9996,
+              "tokens": 75
+            },
+            {
+              "text": "Urbina heads to Venezuela after mother reportedly kidnapped Detroit Tigers closer Ugueth Urbina, whose father was killed in a robbery 10 years ago, rushed back to Venezuela on Thursday after his mother was apparently kidnapped at a home Urbina owns in his native country.",
+              "truth": "Sports",
+              "predicted": "World",
+              "confidence": 0.9965,
+              "tokens": 67
+            },
+            {
+              "text": "Bush's Record \\\\\"WASHINGTON (AP) -- Documents that should have been written to explain gaps in\\President Bush's Texas Air National Guard service are missing from the military\\records released about his service in 1972 and 1973, according to regulations\\and outside experts.\"\\\\\"For",
+              "truth": "Sci/Tech",
+              "predicted": "World",
+              "confidence": 0.6383,
+              "tokens": 146
+            }
+          ]
+        },
+        {
+          "category": "confident_error",
+          "count": 1,
+          "share_of_errors": 0.0556,
+          "examples": [
+            {
+              "text": "China offended by Nike advertisement China has voiced its anger over a Nike advertisement in which a US basketball star fights off a series of ancient Chinese characters.",
+              "truth": "Sports",
+              "predicted": "World",
+              "confidence": 0.9486,
+              "tokens": 42
+            }
+          ]
+        }
+      ],
+      "slices": {
+        "by_length": [
+          {
+            "name": "short (<=52 tokens)",
+            "documents": 70,
+            "accuracy": 0.8857,
+            "mean_confidence": 0.9106
+          },
+          {
+            "name": "medium",
+            "documents": 64,
+            "accuracy": 0.9219,
+            "mean_confidence": 0.9446
+          },
+          {
+            "name": "long (>65 tokens)",
+            "documents": 66,
+            "accuracy": 0.9242,
+            "mean_confidence": 0.948
+          }
+        ],
+        "by_class": [
+          {
+            "name": "class: World",
+            "documents": 60,
+            "accuracy": 0.9667,
+            "mean_confidence": 0.9693
+          },
+          {
+            "name": "class: Sports",
+            "documents": 53,
+            "accuracy": 0.9245,
+            "mean_confidence": 0.9376
+          },
+          {
+            "name": "class: Business",
+            "documents": 43,
+            "accuracy": 0.9302,
+            "mean_confidence": 0.9198
+          },
+          {
+            "name": "class: Sci/Tech",
+            "documents": 44,
+            "accuracy": 0.7955,
+            "mean_confidence": 0.8947
+          }
+        ],
+        "by_shape": [
+          {
+            "name": "headline-shaped (<3 sentences)",
+            "documents": 160,
+            "accuracy": 0.9187,
+            "mean_confidence": 0.9292
+          },
+          {
+            "name": "article-shaped (>=3 sentences)",
+            "documents": 40,
+            "accuracy": 0.875,
+            "mean_confidence": 0.9524
+          }
+        ]
+      },
+      "truncates_input": true
+    },
+    {
+      "tier": "bronze",
+      "documents": 200,
+      "correct": 179,
+      "wrong": 21,
+      "accuracy": 0.895,
+      "max_tokens_read": 1000000000,
+      "token_length": {
+        "mean": 58.9,
+        "p50": 59,
+        "p95": 85,
+        "max": 146
+      },
+      "failure_categories": [
+        {
+          "category": "near_miss_boundary",
+          "count": 20,
+          "share_of_errors": 0.9524,
+          "examples": [
+            {
+              "text": "Yahoo Unveils Budget Domains Deal Domain hosting and parking services drop in price, rise in capacity to lure small businesses.",
+              "truth": "Sci/Tech",
+              "predicted": "Business",
+              "confidence": 0.5945,
+              "tokens": 31
+            },
+            {
+              "text": "Govt denies spam campaign breaks law The Federal Government has rejected Opposition calls for an inquiry into the Prime Minister #39;s use of his son #39;s computer software company to spam voters with Liberal Party election material.",
+              "truth": "Sci/Tech",
+              "predicted": "World",
+              "confidence": 0.5319,
+              "tokens": 58
+            },
+            {
+              "text": "Major Rathore is a perfectionist to the core A man of words, commitment and warmth. Rajyvardhan Singh Rathore combines all these qualities. And he, of course, is one of the most talented shooters of recent times. ",
+              "truth": "Sports",
+              "predicted": "Sci/Tech",
+              "confidence": 0.3337,
+              "tokens": 53
+            }
+          ]
+        },
+        {
+          "category": "other",
+          "count": 1,
+          "share_of_errors": 0.0476,
+          "examples": [
+            {
+              "text": "China offended by Nike advertisement China has voiced its anger over a Nike advertisement in which a US basketball star fights off a series of ancient Chinese characters.",
+              "truth": "Sports",
+              "predicted": "World",
+              "confidence": 0.4567,
+              "tokens": 42
+            }
+          ]
+        }
+      ],
+      "slices": {
+        "by_length": [
+          {
+            "name": "short (<=52 tokens)",
+            "documents": 70,
+            "accuracy": 0.8429,
+            "mean_confidence": 0.7068
+          },
+          {
+            "name": "medium",
+            "documents": 64,
+            "accuracy": 0.9531,
+            "mean_confidence": 0.8193
+          },
+          {
+            "name": "long (>65 tokens)",
+            "documents": 66,
+            "accuracy": 0.8939,
+            "mean_confidence": 0.8011
+          }
+        ],
+        "by_class": [
+          {
+            "name": "class: World",
+            "documents": 60,
+            "accuracy": 0.95,
+            "mean_confidence": 0.8392
+          },
+          {
+            "name": "class: Sports",
+            "documents": 53,
+            "accuracy": 0.9057,
+            "mean_confidence": 0.7429
+          },
+          {
+            "name": "class: Business",
+            "documents": 43,
+            "accuracy": 0.907,
+            "mean_confidence": 0.7409
+          },
+          {
+            "name": "class: Sci/Tech",
+            "documents": 44,
+            "accuracy": 0.7955,
+            "mean_confidence": 0.7543
+          }
+        ],
+        "by_shape": [
+          {
+            "name": "headline-shaped (<3 sentences)",
+            "documents": 160,
+            "accuracy": 0.8938,
+            "mean_confidence": 0.7616
+          },
+          {
+            "name": "article-shaped (>=3 sentences)",
+            "documents": 40,
+            "accuracy": 0.9,
+            "mean_confidence": 0.8231
+          }
+        ]
+      },
+      "truncates_input": false
+    }
+  ]
+}

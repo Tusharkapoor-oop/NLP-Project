@@ -35,12 +35,23 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://localhost:8000")
     parser.add_argument("--tier", default=None)
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=120.0,
+        help=(
+            "Per-request timeout in seconds. The default is deliberately generous: "
+            "a tier that was not preloaded is loaded lazily on its first request, and "
+            "the gold model needs ~39 s to load on a CPU-only host. A tight timeout "
+            "here reports a false failure for a slow-but-healthy service."
+        ),
+    )
     args = parser.parse_args()
 
     base = args.base_url.rstrip("/")
-    print(f"Smoke-testing {base}")
+    print(f"Smoke-testing {base} (per-request timeout {args.timeout:.0f}s)")
 
-    with httpx.Client(base_url=base, timeout=30.0) as client:
+    with httpx.Client(base_url=base, timeout=args.timeout) as client:
         # --- probes ---
         response = client.get("/healthz")
         check(response.status_code == 200, "GET /healthz returns 200")

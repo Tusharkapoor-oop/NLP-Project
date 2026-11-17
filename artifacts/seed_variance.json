@@ -1,0 +1,57 @@
+{
+  "generated_at": "2026-11-16T08:42:28+00:00",
+  "tiers": {
+    "bronze": {
+      "tier": "bronze",
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "runs": [
+        {
+          "accuracy": 0.897,
+          "macro_f1": 0.8964,
+          "n_test": 2000,
+          "seed": 42,
+          "seconds": 17.9
+        },
+        {
+          "accuracy": 0.8935,
+          "macro_f1": 0.8926,
+          "n_test": 2000,
+          "seed": 43,
+          "seconds": 8.3
+        },
+        {
+          "accuracy": 0.901,
+          "macro_f1": 0.9,
+          "n_test": 2000,
+          "seed": 44,
+          "seconds": 10.9
+        }
+      ],
+      "accuracy": {
+        "n": 3,
+        "mean": 0.8972,
+        "std": 0.0038,
+        "min": 0.8935,
+        "max": 0.901,
+        "range": 0.0075
+      },
+      "macro_f1": {
+        "n": 3,
+        "mean": 0.8963,
+        "std": 0.0037,
+        "min": 0.8926,
+        "max": 0.9,
+        "range": 0.0074
+      },
+      "total_seconds": 37.1
+    }
+  },
+  "max_std": null,
+  "max_range": null,
+  "passed": true,
+  "failures": []
+}

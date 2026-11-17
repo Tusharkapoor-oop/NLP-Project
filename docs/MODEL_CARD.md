@@ -44,21 +44,92 @@ artifact, not to certify quality.
 
 ## 4. Evaluation protocol
 
+- **One canonical split, shared by every tier.** `load_split` computes a single
+  stratified partition from a fixed universe; `train_rows` subsamples *only* the
+  training portion. A tier that trains on fewer rows is scored on exactly the
+  same held-out documents as one that trains on more. This is enforced by
+  `tests/test_data_integrity.py` (12 tests), because an earlier version of this
+  project violated it: gold trained on one partition and was scored on another,
+  and 23.2% of its "test set" was data it had already seen. That inflated its
+  headline accuracy from 0.9035 to 0.9180.
 - Fixed seed (42) and a fixed stratified split, so numbers are comparable across
   runs.
 - Reported metrics: accuracy **and** macro-F1. Macro-F1 is authoritative because
-  it weights every class equally.
-- Run-to-run variation is approximately ±0.5 accuracy points. Any claimed
-  improvement smaller than that is not evidence and must not be presented as one.
+  it weights every class equally. Cohen's κ and MCC are reported alongside,
+  because both correct for chance agreement and are harder to flatter.
+- **Every headline number carries a 95% bootstrap confidence interval**
+  (`scripts/significance.py`, 2,000 resamples). A point estimate without an
+  interval is not accepted as a claim.
+- **Tier comparisons are paired.** All tiers see the same documents, so
+  McNemar's test is the correct instrument, not a difference of independent
+  proportions. `--require-order` makes "the docs claim a ladder" a hard gate.
+- Run-to-run variation is **measured**, not assumed: `scripts/seed_variance.py`
+  reports mean ± std across seeds. With `--vary-split` it measures full pipeline
+  variance (bronze: std 0.0038, range 0.0075 over 3 seeds). Tiers that are
+  deterministic under a fixed split are reported as *deterministic*, not as
+  "zero variance" — the distinction matters, because a deterministic model says
+  nothing about the variance of the pipeline around it.
 - A trivial baseline (TF-IDF + Logistic Regression) is always reported alongside
   the neural models. On AG News this baseline is genuinely competitive, and
   saying so is part of the analysis.
 - Calibration is measured (expected calibration error, 10 bins) and reported with
   a confusion matrix and per-class precision/recall/F1. Aggregate accuracy alone
   is not accepted as evidence of quality.
+- **Training cost and serving cost are both reported.** Accuracy is not a
+  sufficient criterion for deployment: gold costs 760× bronze per 1,000 requests
+  and is 759× slower, for a difference the paired test cannot distinguish from
+  chance (`scripts/benchmark.py`, `scripts/cost_model.py`).
 - A 24-item hand-written probe set checks realistic headlines and flags
   out-of-domain copy as unscored. It is intentionally small and readable so every
   miss can be explained in review.
+
+### Calibration under distribution shift (gold)
+
+Gold is calibrated on AG News and overconfident on anything newer: on 149 live
+2026 headlines it reported 0.90 while being right 74% of the time. A single
+temperature cannot fix both regimes, so `src/newsclass/calibration.py` blends two
+maps using a character n-gram gate that estimates "this text does not look like
+AG News". AG-News-like text keeps its in-distribution confidence; modern news is
+mapped by Platt scaling fitted on labelled 2026 headlines.
+
+| Regime | ECE before | ECE after | Accuracy |
+|---|---|---|---|
+| 2026 headlines (149) | 0.152 | 0.067 (5-fold out-of-fold) | unchanged, 0.738 |
+| AG News test (400) | 0.028 | 0.020 | unchanged, 0.920 |
+
+### Adjudicated out-of-distribution accuracy (single reviewer)
+
+Section labels are not topic labels. All 71 disputed documents from the 2026
+headline set were reviewed one by one: the section label was upheld, corrected,
+or the document was excluded as having no defensible single class (newsletter
+promos, a property gallery, a cartoon). The ledger is
+`artifacts/adjudication_ood.jsonl`; `scripts/adjudicate.py` applies it.
+
+| Tier | As published | Adjudicated | 95% CI | Macro-F1 |
+|---|---|---|---|---|
+| gold | 0.7383 | **0.8214** (115/140) | 0.750-0.876 | 0.8066 |
+| bronze | 0.7248 | 0.7786 (109/140) | 0.703-0.839 | 0.7393 |
+| silver | 0.5839 | 0.6714 (94/140) | 0.590-0.744 | 0.6676 |
+
+Where gold's 39 published errors went: 10 were pure label noise (the model's
+answer was right and the section label wrong), 7 were excluded items, 3 errors
+were revealed that the section label had hidden, leaving **25 genuine errors**.
+Gold's Business recall rises from 0.44 to 0.64 and World precision to 1.00 after
+correction; Sci/Tech precision stays low at 0.59, so the over-assignment of tech
+is real, not a labelling artefact.
+
+The corrected numbers still overlap: gold's interval [0.750, 0.876] contains
+bronze's 0.779, so the ranking of gold over bronze on unseen news remains
+unproven. This adjudication was performed by one reviewer (the assistant), not a
+human panel; a second independent labeler is required before these figures are
+treated as final.
+
+Calibration never changes a predicted label, only how much it is trusted. The
+artifact (`artifacts/gold/calibration.json`) is ignored by git because it lives
+in the ignored `artifacts/gold/` directory: refit it with
+`python scripts/fit_calibration.py` after training gold, and check `/v1/model`
+for `calibration.gold.enabled`. If the artifact is absent or unreadable the tier
+serves raw confidences, so a partial install still works.
 
 ## 5. Monitoring in production
 

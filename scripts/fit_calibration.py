@@ -41,11 +41,12 @@ RUNS = ROOT / ".pytest_runs"
 OOD_RESULTS = RUNS / "fresh_ood_results.json"
 OOD_CACHE = RUNS / "ood_docs.json"
 INDIST_CACHE = RUNS / "indist_scores.json"
-GATE_CACHE = RUNS / "shift_gate.joblib"
+GATE_CACHE = ROOT / "artifacts" / "gold" / "shift_gate.joblib"
 CALIBRATION = ROOT / "artifacts" / "gold" / "calibration.json"
 API = os.environ.get("NEWSCLASS_API", "http://127.0.0.1:8012").rstrip("/")
 
-AG_NEWS = "SetFit/ag_news"
+AG_NEWS_URL = "https://huggingface.co/datasets/SetFit/ag_news/resolve/main/test.jsonl"
+AG_NEWS_CACHE = RUNS / "agnews_test.jsonl"
 AG_SAMPLE = 1500  # in-distribution rows for the gate
 INDIST_EVAL = 400  # held-out AG News rows scored through the API
 FOLDS = 5
@@ -105,19 +106,31 @@ def load_ood() -> tuple[list[str], np.ndarray, np.ndarray]:
 
 
 def load_ag_news() -> tuple[list[str], list[str], np.ndarray]:
-    """AG News sample: ``(gate texts, evaluation texts, evaluation label ids)``."""
-    from datasets import load_dataset
+    """AG News sample: ``(gate texts, evaluation texts, evaluation label ids)``.
 
-    dataset = load_dataset(AG_NEWS, split="test")
-    total = min(len(dataset), AG_SAMPLE + INDIST_EVAL)
-    texts = [dataset[i]["text"] for i in range(total)]
-    labels = np.array([dataset[i]["label"] for i in range(AG_SAMPLE, total)], dtype=int)
+    The JSONL is fetched directly: ``datasets`` spends minutes converting this
+    repo to Arrow, and we only need two thousand short strings.
+    """
+    if AG_NEWS_CACHE.exists():
+        payload = AG_NEWS_CACHE.read_text(encoding="utf-8")
+    else:
+        print(f"downloading {AG_NEWS_URL.rsplit('/', 2)[-2]}/test.jsonl")
+        with urllib.request.urlopen(AG_NEWS_URL, timeout=120) as response:
+            payload = response.read().decode("utf-8")
+        AG_NEWS_CACHE.write_text(payload, encoding="utf-8")
+
+    rows = [json.loads(line) for line in payload.splitlines() if line.strip()]
+    total = min(len(rows), AG_SAMPLE + INDIST_EVAL)
+    texts = [rows[i]["text"] for i in range(total)]
+    labels = np.array([rows[i]["label"] for i in range(AG_SAMPLE, total)], dtype=int)
     return texts[:AG_SAMPLE], texts[AG_SAMPLE:], labels
 
 
 def score_api(texts: list[str], tier: str = "gold") -> tuple[np.ndarray, np.ndarray]:
     """Raw confidences and predicted class ids from the running service."""
-    labels = json.loads((ROOT / "artifacts" / "registry.json").read_text(encoding="utf-8"))["labels"]
+    labels = json.loads((ROOT / "artifacts" / "registry.json").read_text(encoding="utf-8"))[
+        "labels"
+    ]
     confidences: list[float] = []
     predicted: list[int] = []
     for start in range(0, len(texts), 64):
@@ -226,7 +239,9 @@ def summarize(name: str, correct: np.ndarray, confidence: np.ndarray) -> dict:
         "ece": round(expected_calibration_error(y, confidence), 4),
         "brier": round(brier(y, confidence), 4),
         "nll": round(float(-np.mean(y * np.log(confidence) + (1 - y) * np.log(1 - confidence))), 4),
-        "conf_gap": round(float(confidence[correct == 1].mean() - confidence[correct == 0].mean()), 4),
+        "conf_gap": round(
+            float(confidence[correct == 1].mean() - confidence[correct == 0].mean()), 4
+        ),
         "high_confidence_accuracy": round(float(correct[high].mean()), 4) if high.any() else None,
         "selective": thresholds,
         "reliability": reliability(y, confidence),
@@ -240,9 +255,11 @@ def main() -> int:
 
     print(f"loading out-of-distribution gold rows from {OOD_RESULTS.name}")
     ood_texts, ood_conf, ood_correct = load_ood()
-    print(f"  n={len(ood_texts)}  raw accuracy={ood_correct.mean():.4f}  mean conf={ood_conf.mean():.4f}")
+    print(
+        f"  n={len(ood_texts)}  raw accuracy={ood_correct.mean():.4f}  mean conf={ood_conf.mean():.4f}"
+    )
 
-    print(f"loading {AG_NEWS} (cached by the hub after the first run)")
+    print("loading AG News test rows (cached after the first run)")
     gate_texts, indist_eval_texts, indist_truth = load_ag_news()
 
     # Cached so a later, already-calibrated server cannot double-apply the map.
@@ -289,7 +306,9 @@ def main() -> int:
         "ood_raw": summarize("ood raw", ood_correct, ood_conf),
         "ood_calibrated": summarize("ood calibrated (out-of-fold)", ood_correct, mixture_ood),
         "indist_raw": summarize("in-distribution raw", indist_correct, indist_conf),
-        "indist_calibrated": summarize("in-distribution with mixture", indist_correct, mixture_indist),
+        "indist_calibrated": summarize(
+            "in-distribution with mixture", indist_correct, mixture_indist
+        ),
         "gate": {
             "auc": round(gate_auc, 4),
             "mean_shift_ood": round(float(oof_shift.mean()), 4),
@@ -321,9 +340,11 @@ def main() -> int:
         "schema_version": 1,
         "tier": "gold",
         "method": "shift-gated platt",
-        "fitted_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+        "fitted_at": __import__("datetime")
+        .datetime.now(__import__("datetime").timezone.utc)
+        .isoformat(),
         "platt": {"slope": slope, "intercept": intercept},
-        "gate": {"path": "artifacts/gold/shift_gate.joblib", "features": "char_wb 3-5 grams"},
+        "gate": {"path": "shift_gate.joblib", "features": "char_wb 3-5 grams"},
         "fit_data": {
             "ood_docs": len(ood_texts),
             "ood_source": "Guardian RSS sections, 2026",
@@ -332,7 +353,9 @@ def main() -> int:
         },
         "metrics": {
             "ood": {
-                "before": {k: report["ood_raw"][k] for k in ("accuracy", "mean_confidence", "ece", "brier")},
+                "before": {
+                    k: report["ood_raw"][k] for k in ("accuracy", "mean_confidence", "ece", "brier")
+                },
                 "after": {
                     k: report["ood_calibrated"][k]
                     for k in ("accuracy", "mean_confidence", "ece", "brier")
@@ -340,7 +363,10 @@ def main() -> int:
                 "selective_after": report["ood_calibrated"]["selective"],
             },
             "indist": {
-                "before": {k: report["indist_raw"][k] for k in ("accuracy", "mean_confidence", "ece", "brier")},
+                "before": {
+                    k: report["indist_raw"][k]
+                    for k in ("accuracy", "mean_confidence", "ece", "brier")
+                },
                 "after": {
                     k: report["indist_calibrated"][k]
                     for k in ("accuracy", "mean_confidence", "ece", "brier")

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-15T18:01:32+00:00",
+  "generated_at": "2026-11-17T04:37:52+00:00",
   "labels": [
     "World",
     "Sports",
@@ -48,14 +48,14 @@
       "tier": "gold",
       "model_name": "distilbert-base-uncased",
       "model_version": "1.0.0",
-      "accuracy": 0.9067,
-      "macro_f1": 0.9065,
-      "train_seconds": 5273.8,
-      "inference_ms_per_100": 9371.27,
-      "size_mb": 268.56,
-      "n_train": 4800,
-      "n_test": 600,
-      "trained_at": "2026-11-13T09:29:09+00:00",
+      "accuracy": 0.9035,
+      "macro_f1": 0.9027,
+      "train_seconds": 36622.3,
+      "inference_ms_per_100": 5142.8,
+      "size_mb": 269.83,
+      "n_train": 6000,
+      "n_test": 2000,
+      "trained_at": "2026-11-17T03:22:35+00:00",
       "notes": "Fine-tuned 2 epochs, max_length=64."
     }
   }

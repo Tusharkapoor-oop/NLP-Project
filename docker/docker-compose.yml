@@ -20,6 +20,10 @@ services:
     environment:
       NEWSCLASS_ENVIRONMENT: prod
       NEWSCLASS_DEFAULT_TIER: ${NEWSCLASS_DEFAULT_TIER:-gold}
+      # Warm every tier at boot. The compose file is the demo/self-hosted stack
+      # where a visitor may try any tier immediately, so the first click should
+      # never wait on a lazy load (gold needs ~39 s on CPU to load).
+      NEWSCLASS_PRELOAD_TIERS: ${NEWSCLASS_PRELOAD_TIERS:-bronze,silver,gold}
       NEWSCLASS_LOG_LEVEL: INFO
       NEWSCLASS_MAX_BATCH_SIZE: "64"
       # Docs off in prod by default; flip to true for a demo.

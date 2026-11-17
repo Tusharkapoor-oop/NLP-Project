@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import platform
 import time
 from dataclasses import asdict, dataclass
@@ -27,6 +28,8 @@ import numpy as np
 
 from .config import env_artifacts_dir
 from .text import normalize_text, tokenize
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 SEED = 42
 LABEL_NAMES = ["World", "Sports", "Business", "Sci/Tech"]  # AG News, id -> name
@@ -75,16 +78,37 @@ def _seed_everything(seed: int = SEED) -> None:
         pass
 
 
-def load_split(rows: int = TRAIN_ROWS):
-    """Load AG News and carve a stratified train/val/test split.
+def load_split(rows: int = TRAIN_ROWS, *, train_rows: int | None = None):
+    """Load AG News and carve a **canonical** stratified train/val/test split.
 
-    Identical logic to the notebooks, so the numbers in the report and the
-    numbers in the served model refer to the same experiment.
+    The partition is computed over a fixed universe of ``rows`` examples and never
+    depends on how much data a tier chooses to train on. That is a correctness
+    requirement, not tidiness:
 
-    ``rows`` controls how many raw training examples are used before splitting.
-    The gold tier is CPU-bound on a laptop, so it is trained on a subset by
-    default (see ``train_gold``); everything else uses the full set.
+    A previous version of this function partitioned whatever range it was asked
+    for, so ``load_split(rows=6000)`` and ``load_split(rows=20000)`` produced
+    *different* test sets from overlapping source rows. The gold tier trained on
+    the first partition and was then scored on the second, which meant 464 of its
+    own training documents (23.2% of the test set) reappeared at evaluation time.
+    Gold scored 95.7% on those memorised documents and 90.2% on the rest — an
+    inflated headline number caused entirely by comparing two different splits.
+
+    Now ``rows`` sets the universe, ``train_rows`` optionally subsamples **only**
+    the training portion, and the validation/test partitions are byte-identical
+    for every tier. Every tier is therefore scored on the same held-out documents,
+    which is what makes the tier table a fair comparison.
+
+    Set ``train_rows`` (not ``rows``) to train on a subset — for example the
+    CPU-bound gold tier.
     """
+    # Point Hugging Face at the project's own cache *before* importing the
+    # library. Every script does this, but ``load_split`` is also called from the
+    # library and from tests, where a user-level cache may hold a half-written
+    # ``*.incomplete`` download that makes ``load_dataset`` stall on the network.
+    # ``setdefault`` keeps any cache the caller already chose.
+    os.environ.setdefault("HF_HOME", str(PROJECT_ROOT / ".hf_cache"))
+    os.environ.setdefault("HF_DATASETS_CACHE", str(PROJECT_ROOT / ".hf_cache" / "datasets"))
+
     from datasets import load_dataset
     from sklearn.model_selection import train_test_split
 
@@ -99,6 +123,18 @@ def load_split(rows: int = TRAIN_ROWS):
     val_df, test_df = train_test_split(
         rest, test_size=0.5, random_state=SEED, stratify=rest["label"]
     )
+
+    # Subsample only the training portion. Stratified so class balance survives,
+    # and seeded so the subset is reproducible. Validation and test are untouched:
+    # shrinking the training set must never move the held-out documents.
+    if train_rows is not None and 0 < train_rows < len(train_df):
+        train_df, _discarded = train_test_split(
+            train_df,
+            train_size=train_rows,
+            random_state=SEED,
+            stratify=train_df["label"],
+        )
+
     return (
         train_df.reset_index(drop=True),
         val_df.reset_index(drop=True),
@@ -365,7 +401,11 @@ def train_gold(out_dir: Path, epochs: int = 2, rows: int = 6000) -> TierMetrics:
     set_seed(SEED)
     started = time.time()
 
-    train_df, val_df, test_df = load_split(rows=rows)
+    # ``train_rows`` subsamples only the training portion, so the validation and
+    # test partitions stay identical to every other tier's. Passing ``rows`` here
+    # would move the test set and silently put gold's own training documents into
+    # its evaluation — the leakage this function is now written to prevent.
+    train_df, val_df, test_df = load_split(train_rows=rows)
     tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
     # Measured on AG News: articles average ~55 sub-word tokens, so 64 keeps
     # essentially every headline whole while halving CPU time versus 96
@@ -442,6 +482,29 @@ def train_gold(out_dir: Path, epochs: int = 2, rows: int = 6000) -> TierMetrics:
     out_dir.mkdir(parents=True, exist_ok=True)
     trainer.save_model(str(out_dir))
     tokenizer.save_pretrained(str(out_dir))
+
+    # Record the exact truncation window used during training.
+    #
+    # This is not bookkeeping: the serving tier must truncate at the same length
+    # it was trained on. Serving at a different window is training/serving skew —
+    # the model sees sequences of a length it never saw during fine-tuning, and
+    # the degradation is silent because nothing errors. Writing the value here
+    # makes the two sides read from one source of truth instead of each holding
+    # its own default, which is how they drifted apart before.
+    (out_dir / "serving.json").write_text(
+        json.dumps(
+            {
+                "max_length": max_length,
+                "labels": LABEL_NAMES,
+                "trained_at": _now_iso(),
+                "epochs": epochs,
+                "rows": rows,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
     # Remove the Trainer scratch directory; only the final model is served.
     scratch = out_dir / "_trainer"
     if scratch.exists():

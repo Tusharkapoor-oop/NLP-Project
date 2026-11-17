@@ -1,0 +1,45 @@
+{
+  "generated_at": "2026-11-17T04:15:43+00:00",
+  "benchmark_source": "C:\\Users\\ACER\\Downloads\\nlp project\\artifacts\\benchmark_report.json",
+  "threads": 8,
+  "assumptions": {
+    "core_hour_usd": 0.04,
+    "gb_hour_usd": 0.005,
+    "note": "Documented placeholders, not a quote. Excludes egress, storage, idle capacity, replica count and engineering time."
+  },
+  "tiers": [
+    {
+      "tier": "gold",
+      "available": true,
+      "throughput_docs_per_second": 14.9,
+      "wall_seconds_per_1k": 67.11,
+      "core_seconds_per_1k": 536.9,
+      "peak_rss_mb": 1267.3,
+      "compute_usd_per_1k": 0.005966,
+      "memory_usd_per_1k": 0.000115,
+      "total_usd_per_1k": 0.006081
+    },
+    {
+      "tier": "silver",
+      "available": true,
+      "throughput_docs_per_second": 1570.7,
+      "wall_seconds_per_1k": 0.64,
+      "core_seconds_per_1k": 5.1,
+      "peak_rss_mb": 1141.4,
+      "compute_usd_per_1k": 5.7e-05,
+      "memory_usd_per_1k": 1e-06,
+      "total_usd_per_1k": 5.8e-05
+    },
+    {
+      "tier": "bronze",
+      "available": true,
+      "throughput_docs_per_second": 11316.3,
+      "wall_seconds_per_1k": 0.09,
+      "core_seconds_per_1k": 0.7,
+      "peak_rss_mb": 1117.0,
+      "compute_usd_per_1k": 8e-06,
+      "memory_usd_per_1k": 0.0,
+      "total_usd_per_1k": 8e-06
+    }
+  ]
+}

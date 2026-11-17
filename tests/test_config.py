@@ -44,6 +44,39 @@ class TestValidation:
         assert Settings(environment="PROD").environment == "prod"
 
 
+class TestPreloadTiers:
+    """``preload_tiers`` moves a tier's one-off load cost from the first caller
+    to boot. A typo would silently never warm a tier, so it must be an error."""
+
+    def test_default_is_empty(self):
+        assert Settings().preload_tier_list == ()
+
+    def test_parses_a_single_tier(self):
+        assert Settings(preload_tiers="gold").preload_tier_list == ("gold",)
+
+    def test_parses_all_tiers_in_order(self):
+        settings = Settings(preload_tiers="bronze,silver,gold")
+        assert settings.preload_tier_list == ("bronze", "silver", "gold")
+
+    def test_tolerates_whitespace_and_case(self):
+        assert Settings(preload_tiers=" Gold , SILVER ").preload_tier_list == ("gold", "silver")
+
+    def test_deduplicates(self):
+        assert Settings(preload_tiers="gold,gold,bronze").preload_tier_list == ("gold", "bronze")
+
+    def test_ignores_empty_segments(self):
+        assert Settings(preload_tiers="gold,,silver,").preload_tier_list == ("gold", "silver")
+
+    def test_rejects_unknown_tier(self):
+        with pytest.raises(ValidationError):
+            Settings(preload_tiers="bronze,golds")
+
+    def test_rejects_unknown_tier_from_environment(self, monkeypatch):
+        monkeypatch.setenv("NEWSCLASS_PRELOAD_TIERS", "platinum")
+        with pytest.raises(ValidationError):
+            Settings()
+
+
 class TestEnvironmentOverrides:
     def test_reads_from_environment(self, monkeypatch):
         monkeypatch.setenv("NEWSCLASS_DEFAULT_TIER", "bronze")

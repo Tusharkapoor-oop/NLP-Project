@@ -1,0 +1,77 @@
+{
+  "generated_at": "2026-11-16T08:36:53+00:00",
+  "documents": 200,
+  "threads": 8,
+  "repeats": 1,
+  "cpu_count": 12,
+  "platform": "win32",
+  "python": "3.13.15",
+  "max_p99_ms": null,
+  "tiers": [
+    {
+      "tier": "gold",
+      "documents_per_single_request": 120,
+      "latency_ms": {
+        "min": 36.1,
+        "p50": 67.99,
+        "p90": 88.5,
+        "p95": 93.89,
+        "p99": 103.61,
+        "max": 106.81,
+        "mean": 67.22
+      },
+      "threads": 8,
+      "repeats": 1,
+      "throughput_docs_per_second": 14.9,
+      "throughput_docs_per_minute": 896.0,
+      "peak_rss_mb": 1267.3,
+      "rss_delta_mb": 1040.8,
+      "memory_available": true,
+      "cold_start_seconds": 14.37
+    },
+    {
+      "tier": "silver",
+      "documents_per_single_request": 120,
+      "latency_ms": {
+        "min": 0.97,
+        "p50": 2.48,
+        "p90": 5.39,
+        "p95": 6.12,
+        "p99": 9.99,
+        "max": 6592.54,
+        "mean": 57.87
+      },
+      "threads": 8,
+      "repeats": 1,
+      "throughput_docs_per_second": 1570.7,
+      "throughput_docs_per_minute": 94241.0,
+      "peak_rss_mb": 1141.4,
+      "rss_delta_mb": 195.1,
+      "memory_available": true,
+      "cold_start_seconds": 3.4
+    },
+    {
+      "tier": "bronze",
+      "documents_per_single_request": 120,
+      "latency_ms": {
+        "min": 0.49,
+        "p50": 0.64,
+        "p90": 1.16,
+        "p95": 1.32,
+        "p99": 1.83,
+        "max": 3.25,
+        "mean": 0.8
+      },
+      "threads": 8,
+      "repeats": 1,
+      "throughput_docs_per_second": 11316.3,
+      "throughput_docs_per_minute": 678979.0,
+      "peak_rss_mb": 1117.0,
+      "rss_delta_mb": 2.6,
+      "memory_available": true,
+      "cold_start_seconds": 4.47
+    }
+  ],
+  "passed": true,
+  "failures": []
+}

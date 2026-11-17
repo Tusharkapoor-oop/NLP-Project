@@ -20,9 +20,10 @@ tmphsb14cm__kernels/
 # Test scratch directories created per run by scripts/run_tests.py
 .pytest_runs/
 pytest-of-*/
-pytest-of-*/
 pip-unpack-*/
 tmp*/
+# Scratch logs from a local run. Note: screenshots are NOT ignored — the
+# documentation images in docs/assets/ are tracked and embedded by the README.
 *.log
 
 # Local scratch scripts
@@ -56,4 +57,8 @@ Thumbs.db
 
 # Runtime interaction data (not a model artifact)
 artifacts/feedback.jsonl
+
+# Drift check outputs (regenerated on every scheduled run)
+artifacts/drift_report.json
+artifacts/drift_history.jsonl
 

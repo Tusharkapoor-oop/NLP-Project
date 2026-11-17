@@ -8,6 +8,7 @@ The API layer never needs to know which framework is underneath.
 from __future__ import annotations
 
 import json
+import logging
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -16,7 +17,10 @@ from typing import Any
 
 import numpy as np
 
+from .calibration import ShiftAwareCalibrator
 from .text import normalize_text, tokenize, transformer_input
+
+logger = logging.getLogger(__name__)
 
 
 class TierModel(ABC):
@@ -41,6 +45,10 @@ class TierModel(ABC):
 
     def describe(self) -> dict[str, Any]:
         return {"name": self.name}
+
+    def calibration(self) -> dict[str, Any]:
+        """Post-hoc confidence calibration metadata, if this tier carries any."""
+        return {"enabled": False}
 
 
 # ---------------------------------------------------------------------------
@@ -164,15 +172,47 @@ class GoldModel(TierModel):
 
     name = "gold"
 
-    def __init__(self, directory: Path, max_length: int = 96) -> None:
+    # Used only when the artifact predates serving.json. Newer artifacts record
+    # the training window, which is authoritative — see _resolve_max_length.
+    FALLBACK_MAX_LENGTH = 64
+
+    def __init__(self, directory: Path, max_length: int | None = None) -> None:
         super().__init__()
         self.directory = directory
-        self.max_length = max_length
+        self._explicit_max_length = max_length
+        self.max_length = max_length or self.FALLBACK_MAX_LENGTH
         self._model = None
         self._tokenizer = None
         self._labels: list[str] = []
         self._batch_size = 16
+        self.calibrator = ShiftAwareCalibrator(self.directory)
         self._load()
+
+    def _resolve_max_length(self) -> int:
+        """The truncation window this model was trained with.
+
+        Serving at a different length than training is training/serving skew: the
+        model receives sequences it never saw while fine-tuning, and nothing
+        raises. The training run therefore records the value in ``serving.json``
+        and that file wins over any default. An explicit constructor argument
+        still wins over both, so a caller can override deliberately.
+        """
+        if self._explicit_max_length is not None:
+            return self._explicit_max_length
+        serving = self.directory / "serving.json"
+        if serving.exists():
+            try:
+                recorded = json.loads(serving.read_text(encoding="utf-8"))
+                value = int(recorded["max_length"])
+                if value > 0:
+                    return value
+            except (json.JSONDecodeError, OSError, KeyError, TypeError, ValueError):
+                logger.warning(
+                    "could not read serving.json in %s; using fallback max_length=%d",
+                    self.directory,
+                    self.FALLBACK_MAX_LENGTH,
+                )
+        return self.FALLBACK_MAX_LENGTH
 
     def _load(self) -> None:
         config_path = self.directory / "config.json"
@@ -189,6 +229,17 @@ class GoldModel(TierModel):
         self._torch = torch  # kept for the explainability path
         id2label = getattr(self._model.config, "id2label", {}) or {}
         self._labels = [id2label[i] for i in sorted(id2label)] if id2label else []
+
+        # Resolve after load, so a missing/unreadable serving.json is reported
+        # against a model that is otherwise ready rather than blocking readiness.
+        self.max_length = self._resolve_max_length()
+        logger.info(
+            "gold tier will truncate at max_length=%d (source: %s)",
+            self.max_length,
+            "constructor"
+            if self._explicit_max_length is not None
+            else ("serving.json" if (self.directory / "serving.json").exists() else "fallback"),
+        )
 
     @property
     def ready(self) -> bool:
@@ -209,7 +260,11 @@ class GoldModel(TierModel):
                 return_tensors="pt",
             )
             logits = self._model(**batch).logits
-            return torch.softmax(logits, dim=-1).numpy()
+            probabilities = torch.softmax(logits, dim=-1).numpy()
+        return self.calibrator.adjust(cleaned, probabilities)
+
+    def calibration(self) -> dict[str, Any]:
+        return self.calibrator.describe()
 
 
 # ---------------------------------------------------------------------------

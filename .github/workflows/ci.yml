@@ -122,6 +122,10 @@ jobs:
           PYTHONPATH: src
           NEWSCLASS_DEFAULT_TIER: bronze
           NEWSCLASS_DOCS_ENABLED: "true"
+          # CI trains only bronze, so warming the others is a no-op here (each
+          # preload is skipped when its artifacts are absent). It is set anyway
+          # so the CI path matches the deployed configuration.
+          NEWSCLASS_PRELOAD_TIERS: bronze,silver,gold
         run: |
           uvicorn newsclass.app:app --host 127.0.0.1 --port 8000 &
           for i in $(seq 1 30); do

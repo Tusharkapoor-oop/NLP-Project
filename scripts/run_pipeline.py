@@ -339,6 +339,26 @@ def main() -> int:
         action="store_true",
         help="skip live evaluation and gate on recorded metrics (fast verification)",
     )
+    parser.add_argument(
+        "--no-analysis",
+        action="store_true",
+        help="skip the statistical and behavioural reports (significance, taxonomy, cost)",
+    )
+    parser.add_argument(
+        "--resamples",
+        type=int,
+        default=2000,
+        help="bootstrap resamples for the significance report",
+    )
+    parser.add_argument(
+        "--require-order",
+        action="store_true",
+        help=(
+            "additionally require that each more expensive tier is significantly "
+            "better than the cheaper one; fails the pipeline when the data does "
+            "not support the ordering the docs claim"
+        ),
+    )
     parser.add_argument("--serve", action="store_true", help="boot the API afterwards")
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--host", default="127.0.0.1")
@@ -434,7 +454,60 @@ def main() -> int:
             return 1
         report.gate_status = "passed-recorded"
 
-    # -- stage 5: optional serve --------------------------------------------
+    # -- stage 5: statistical and behavioural reports ------------------------
+    # These are the reports that turn point estimates into defensible claims.
+    # They are advisory rather than blocking: a report that fails to run must not
+    # stop a service from being deployed, but a report that *runs* and disagrees
+    # with a claim is exactly what the release notes need to record.
+    if live_ok and not args.no_analysis:
+        step("Analyse: significance, error taxonomy, cost")
+
+        sig_cmd = [
+            sys.executable,
+            "scripts/significance.py",
+            "--resamples",
+            str(args.resamples),
+            "--artifacts-dir",
+            str(ARTIFACTS),
+        ]
+        if args.sample and args.sample > 0:
+            sig_cmd.extend(["--sample", str(args.sample)])
+        if args.require_order:
+            sig_cmd.append("--require-order")
+        if run(sig_cmd) != 0:
+            warn("significance report did not pass (see the output above)")
+            report.degraded = True
+
+        if (
+            run(
+                [
+                    sys.executable,
+                    "scripts/error_taxonomy.py",
+                    "--sample",
+                    str(args.sample or 1000),
+                    "--artifacts-dir",
+                    str(ARTIFACTS),
+                ]
+            )
+            != 0
+        ):
+            warn("error taxonomy could not be produced")
+
+        # Cost needs a benchmark, and a benchmark needs several minutes. Reuse an
+        # existing one rather than silently benchmarking during every deploy.
+        bench_path = ARTIFACTS / "benchmark_report.json"
+        if bench_path.exists():
+            if run([sys.executable, "scripts/cost_model.py", "--apply"]) != 0:
+                warn("cost model could not be computed from the existing benchmark")
+        else:
+            warn(
+                "no benchmark_report.json yet; run scripts/benchmark.py once to "
+                "populate cost_per_1k_requests"
+            )
+    elif args.no_analysis:
+        warn("statistical reports skipped (--no-analysis)")
+
+    # -- stage 6: optional serve --------------------------------------------
     banner("PIPELINE COMPLETE - artifacts verified and gated")
     print(f"gate status : {report.gate_status}")
     print(f"trained     : {report.trained or 'nothing new'}")

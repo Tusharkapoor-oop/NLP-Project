@@ -16,6 +16,7 @@ import sys
 import time
 import urllib.request
 from collections import Counter
+from pathlib import Path
 from xml.etree import ElementTree as ET
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -37,7 +38,7 @@ def clean(text: str) -> str:
     return re.sub(r"\s+", " ", html.unescape(TAG.sub(" ", text))).strip()
 
 
-def fetch() -> list[dict]:
+def fetch(per_feed: int = PER_FEED) -> list[dict]:
     docs, seen = [], set()
     for label, url in FEEDS.items():
         req = urllib.request.Request(url, headers={"User-Agent": "newsclass-ood-eval/1.0"})
@@ -54,15 +55,15 @@ def fetch() -> list[dict]:
             seen.add(key)
             docs.append({"text": text[:1000], "gold": label})
             n += 1
-            if n >= PER_FEED:
+            if n >= per_feed:
                 break
         print(f"  {label:<9} {n:>3} headlines")
     return docs
 
 
-def post(path: str, payload: dict, timeout: int = 600) -> dict:
+def post(path: str, payload: dict, timeout: int = 600, base_url: str | None = None) -> dict:
     req = urllib.request.Request(
-        API + path,
+        (base_url or API) + path,
         data=json.dumps(payload).encode(),
         headers={"Content-Type": "application/json"},
         method="POST",
@@ -71,11 +72,15 @@ def post(path: str, payload: dict, timeout: int = 600) -> dict:
         return json.load(resp)
 
 
-def predict(docs: list[dict], tier: str) -> list[dict]:
+def predict(docs: list[dict], tier: str, base_url: str | None = None) -> list[dict]:
     out: list[dict] = []
     for start in range(0, len(docs), BATCH):
         chunk = docs[start : start + BATCH]
-        res = post("/v1/predict/batch", {"texts": [d["text"] for d in chunk], "tier": tier})
+        res = post(
+            "/v1/predict/batch",
+            {"texts": [d["text"] for d in chunk], "tier": tier},
+            base_url=base_url,
+        )
         served = res.get("tier")
         if served != tier:
             raise SystemExit(
@@ -161,17 +166,19 @@ def report(name: str, rows: list[dict]) -> dict:
 
 
 def main() -> None:
-    import os
-
-    cache = ".pytest_runs/ood_docs.json"
-    if os.path.exists(cache):
-        with open(cache, encoding="utf-8") as fh:
+    cache = Path(".pytest_runs/ood_docs.json")
+    results = Path(".pytest_runs/fresh_ood_results.json")
+    # A fresh clone has no scratch directory; without this the first run dies
+    # with FileNotFoundError after the slow fetch has already happened.
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    if cache.exists():
+        with cache.open(encoding="utf-8") as fh:
             docs = json.load(fh)
         print(f"Reusing cached documents: {len(docs)}")
     else:
         print("Fetching live Guardian section feeds...")
         docs = fetch()
-        with open(cache, "w", encoding="utf-8") as fh:
+        with cache.open("w", encoding="utf-8") as fh:
             json.dump(docs, fh, indent=1)
     print(f"Total {len(docs)} documents, {len(set(d['text'] for d in docs))} unique")
     out: dict = {"source": "theguardian.com RSS sections", "docs": len(docs), "tiers": {}}
@@ -184,7 +191,7 @@ def main() -> None:
         res["rows"] = rows
         out["tiers"][tier] = res
 
-    with open(".pytest_runs/fresh_ood_results.json", "w", encoding="utf-8") as fh:
+    with results.open("w", encoding="utf-8") as fh:
         json.dump(out, fh, indent=1)
 
     print("\n=== summary ===")

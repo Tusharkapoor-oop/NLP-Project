@@ -89,10 +89,17 @@ docker compose -f docker/docker-compose.yml up --build
 
 ![One copy, three desks](docs/assets/studio-compare.png)
 
+The Model Lab (`GET /lab`) is the measurement bench rather than the showcase: each
+tier gets its own card and its own request, so a slow or failing desk is visible as
+itself instead of hiding behind an aggregate.
+
+![The Model Lab: every tier measured independently](docs/assets/lab.png)
+
 The interface is deliberately defensive: if a vendor library or an API call
 fails, the page falls back to readable static content and a toast instead of a
 blank screen. `tests/test_ui_assets.py` enforces that no CDN reference sneaks
-back in.
+back in, and — because a library that is downloaded but never called is just page
+weight — that every vendored script's global actually appears in the UI code.
 
 ---
 
@@ -102,34 +109,80 @@ This is the core design decision. Rather than shipping one model, the system shi
 a **quality/cost ladder**. The same request can be served at three different price
 points, and the choice is an explicit, measurable trade-off.
 
-| Tier | Model | Accuracy | Macro-F1 | Size | Latency / 100 docs | Train (CPU) | Use when |
-|---|---|---|---|---|---|---|---|
-| **Bronze** | TF-IDF + Logistic Regression | 0.8990 | 0.8989 | 0.83 MB | 11 ms | ~21 s | High volume, cost-sensitive, no PyTorch runtime needed |
-| **Silver** | Word2Vec (CBOW) + BiLSTM | 0.8910 | 0.8910 | 9.2 MB | 1,145 ms | ~7 min | You want learned embeddings and sequence modelling on CPU |
-| **Gold** | Fine-tuned DistilBERT | 0.9240 | 0.9238 | 268.6 MB | 18,669 ms | ~88 min | Accuracy matters more than latency or memory |
+| Tier | Model | Accuracy | 95% CI | Macro-F1 | Size | p50 latency | Throughput | Cost / 1k | Train (CPU) |
+|---|---|---|---|---|---|---|---|---|---|
+| **Bronze** | TF-IDF + Logistic Regression | 0.8960 | [0.882, 0.909] | 0.8954 | 0.83 MB | 0.64 ms | 11,316 docs/s | $0.00001 | ~21 s |
+| **Silver** | Word2Vec (CBOW) + BiLSTM | 0.8915 | [0.878, 0.906] | 0.8911 | 9.2 MB | 2.48 ms | 1,571 docs/s | $0.00006 | ~7 min |
+| **Gold** | Fine-tuned DistilBERT | 0.9035 | [0.890, 0.917] | 0.9027 | 269 MB | 67.99 ms | 15 docs/s | $0.00608 | ~610 min |
 
-All figures come from `python scripts/accuracy_report.py` — a stratified
-1,000-document audit of the held-out split (seed 42).
-`artifacts/accuracy_report.json` holds the full output, including per-class scores,
-confusion matrices and calibration. Three honest readings of this table are worth
-stating out loud:
+Every figure is produced by a script in `scripts/`, and every output is committed
+under `artifacts/`:
 
-* **Gold buys ~2.5 accuracy points over bronze** at ~324× the size and ~1,600× the
-  latency. Whether that trade is worth it is a business decision, which is the
-  whole point of routing by tier.
-* **Silver is not between its neighbours at all.** It is ~100× slower than bronze
-  yet ~0.8 points *less* accurate on this dataset — sequence modelling pays off
-  on longer, more nuanced documents, and AG News headlines are short and
-  keyword-rich. Reporting that honestly is more useful than drawing a tidy ladder.
-* **The tiers were not trained on identical row counts.** Bronze and silver used
-  16,000 training / 2,000 test rows; the gold run used 4,800 / 600 to fit the CPU
-  budget. That makes gold's number noisier, and it is stated here rather than
-  hidden by a rounder number.
+| Report | Produced by | Answers |
+|---|---|---|
+| accuracy + per-class + confusion | `scripts/accuracy_report.py` | how good is it, and where exactly does it fail numerically |
+| **confidence intervals + paired tests** | `scripts/significance.py` | is the ranking real, or noise |
+| operational latency, throughput, memory, cold start | `scripts/benchmark.py` | can it actually run as a service |
+| cost per 1,000 requests | `scripts/cost_model.py` | what does a request cost at each tier |
+| failure taxonomy + behavioural slices | `scripts/error_taxonomy.py` | *what kind* of mistakes are these |
+| run-to-run variance across seeds | `scripts/seed_variance.py` | how much does a rerun move the number |
 
-> **Actively measured numbers, not marketing.** `artifacts/registry.json` holds the
-> training-time figures; `artifacts/accuracy_report.json` holds the fresh audit.
-> Regenerate either with `python scripts/evaluate.py` or
-> `python scripts/accuracy_report.py` — both re-score the held-out split.
+### The honest reading of this table
+
+**1. The three tiers are statistically indistinguishable on accuracy.**
+This is the single most important result in the project, and it replaces an
+earlier claim that gold was clearly best:
+
+| Comparison | Δ accuracy | McNemar p | Verdict |
+|---|---|---|---|
+| gold vs silver | +0.0120 | 0.066 | no reliable difference |
+| gold vs bronze | +0.0075 | 0.270 | no reliable difference |
+| silver vs bronze | −0.0045 | 0.402 | no reliable difference |
+
+The confidence intervals overlap almost entirely. An earlier version of this
+README reported gold at **0.9180** and described it as the accuracy leader. That
+number was **inflated by data leakage**: 464 documents (23.2% of the test set)
+were in gold's training data, where it scored 95.7% against 90.2% elsewhere.
+`load_split(rows=N)` used to re-partition per call, so gold trained on one split
+and was scored on another. Fixed in `load_split(train_rows=...)`, guarded by
+`tests/test_data_integrity.py` (12 tests), and gold was retrained from scratch:
+**0.9180 → 0.9035**.
+
+**2. But gold is not fairly tested, and saying so matters.**
+Gold was fine-tuned on **6,000** training rows; bronze and silver used
+**16,000** — a **2.67× data handicap** imposed by the CPU budget, on top of
+reading only the first 64 tokens of each document. So the defensible claim is
+narrower than "DistilBERT is no better than TF-IDF":
+
+> On a CPU budget, fine-tuning DistilBERT on 6k rows does not significantly beat
+> logistic regression trained on 16k rows. The Transformer's advantage is in
+> *data efficiency*, and this experiment does not give it enough rows to show one.
+
+This is consistent with the notebook result, where the same model reached **96.5%
+on BBC News from only ~1,100 articles** — the transformer needs *fewer* examples
+than a classical model, not more, and it needs to be measured against a baseline
+given the *same* budget to make the comparison fair.
+
+**3. Cost is where the tiers genuinely separate.**
+
+| | bronze | silver | gold |
+|---|---|---|---|
+| throughput | 11,316 docs/s | 1,571 docs/s | 15 docs/s |
+| p99 latency | 1.8 ms | 10.0 ms | 103.6 ms |
+| peak RSS | 1,117 MB | 1,141 MB | 1,267 MB |
+| cold start | 4.5 s | 3.4 s | **14.4 s** |
+| cost / 1k | $0.00001 | $0.00006 | **$0.00608** |
+
+Gold costs **760× bronze per 1,000 requests** and is **759× slower** — for an
+accuracy difference that is not statistically significant. On this evidence the
+*cheapest* tier is the correct production choice, and that conclusion is only
+reachable because the significance report exists. Shipping gold because it is
+"the best model" would be the most expensive mistake in this repo.
+
+> Cost figures use documented placeholder rates
+> (`--core-hour 0.04`, `--gb-hour 0.005`) and exclude egress, storage, idle
+> capacity and engineering time. Substitute your provider's rates;
+> `python scripts/cost_model.py --apply` rewrites the registry.
 
 ### Why a tier ladder rather than one "best" model?
 
@@ -163,6 +216,7 @@ after the fact rather than hidden inside a config file.
 | Automated verification | 101 tests, CI matrix, accuracy gate, container smoke test | `tests/`, `.github/workflows/ci.yml` |
 | Release gate | Refuses to ship an artifact below a macro-F1 threshold | `scripts/evaluate.py --gate` |
 | Accuracy audit | Per-class scores, calibration error, curated probes; gated in CI | `scripts/accuracy_report.py` |
+| Drift alarm | Weekly accuracy check on unseen news, per-tier floor, webhook + non-zero exit | `scripts/drift_check.py`, `.github/workflows/drift.yml` |
 | Explainability | Native per-tier attributions (exact linear, gradient×input neural) | `src/newsclass/explain.py` |
 | Human feedback | Append-only JSONL correction ledger with the machine's verdict | `src/newsclass/feedback.py` |
 | Privacy in errors | 422 responses report the field and reason, never echo the document | `src/newsclass/app.py` |
@@ -258,6 +312,8 @@ no scraped URLs, no bundled data files.
 ```bash
 python scripts/evaluate.py --gate 0.85          # release gate, all tiers
 python scripts/accuracy_report.py               # per-class, calibration, probes
+python scripts/ood_eval.py                      # accuracy on live, unseen headlines
+python scripts/adjudicate.py                    # same, with reviewer-corrected labels
 ```
 
 ```
@@ -273,6 +329,42 @@ bronze/silver/gold). Its gate fails below 0.85 accuracy or macro-F1.
 `evaluate.py` draws a random sample; `accuracy_report.py` samples per class. That is
 why the two reports differ slightly: run-to-run variance is ~±0.5 points, and both
 are shown rather than smoothing one into a rounder claim.
+
+On 149 live 2026 headlines the tiers score 0.738 (gold), 0.725 (bronze) and 0.584
+(silver) against the publisher's section label. Reviewing the 71 disputed
+documents one by one — upholding, correcting or excluding each — moves gold to
+**0.821** (95% CI 0.750–0.876) and bronze to 0.779, because 10 of gold's 39
+errors were the section label being wrong rather than the model. The ledger and
+the method are in `docs/MODEL_CARD.md` and `artifacts/adjudication_ood.jsonl`;
+it is a single-reviewer adjudication, not a human panel.
+
+### Drift check (scheduled)
+
+In-distribution metrics cannot see the world changing. `drift_check.py` scores
+today's live headlines, compares each tier against `artifacts/drift_baseline.json`,
+and exits non-zero when accuracy falls under that tier's floor or drops too far
+below its baseline.
+
+```bash
+python scripts/drift_check.py --tier all                 # against a running service
+NEWSCLASS_ALERT_WEBHOOK=https://hooks.slack.com/... \
+  python scripts/drift_check.py --tier all --min-accuracy 0.65
+```
+
+| Exit | Meaning |
+|---|---|
+| 0 | accuracy is within the floor and within `--max-drop` of the baseline |
+| 1 | alert: below the floor, or dropped more than `--max-drop` (0.10 by default) |
+| 2 | not judged: fewer documents than `--min-docs`, so no false alarm |
+
+Floors live in the baseline file per tier, because a tier can be legitimately weak
+out of distribution and a global floor would then alert every week. Silver is the
+example: 0.584 on 2026 headlines, so its floor is 0.52 and the alarm means it got
+*worse*, not that it is weak. Each run appends to `artifacts/drift_history.jsonl`
+so a trend is visible. `.github/workflows/drift.yml` runs it weekly against a
+freshly trained bronze tier, since the other tiers' artifacts are too large for a
+hosted runner; point the same command at the deployed service with `--tier all`
+to watch gold and silver.
 
 ---
 

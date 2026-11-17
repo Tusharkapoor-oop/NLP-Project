@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-16T06:40:00+00:00",
+  "source": "theguardian.com RSS sections",
+  "notes": "First recorded unseen-data measurement (149 live 2026 headlines). Treat as the healthy reference; update deliberately with --update-baseline after a known-good change. min_accuracy is the per-tier alarm floor, set below that tier's own baseline so the alarm means regression rather than a tier's inherent weakness (silver really is poor out of distribution).",
+  "tiers": {
+    "bronze": {
+      "accuracy": 0.7248,
+      "n": 149,
+      "ci95": [0.648, 0.79],
+      "min_accuracy": 0.62
+    },
+    "silver": {
+      "accuracy": 0.5839,
+      "n": 149,
+      "ci95": [0.504, 0.66],
+      "min_accuracy": 0.52
+    },
+    "gold": {
+      "accuracy": 0.7383,
+      "n": 149,
+      "ci95": [0.662, 0.802],
+      "min_accuracy": 0.63
+    }
+  }
+}

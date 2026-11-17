@@ -94,6 +94,26 @@ async def lifespan(app: FastAPI):
     app.state.stats = PredictionStats()
     app.state.feedback = FeedbackStore(settings.artifacts_dir / "feedback.jsonl")
 
+    # Warming a non-default tier here moves its one-off load cost from the first
+    # caller to boot. That matters: DistilBERT takes ~39 s to load on this CPU,
+    # so without preloading, the first request that asks for gold can exceed a
+    # typical 30 s client timeout. Each tier is warmed in a try/except so one
+    # missing artifact never prevents the others from loading.
+    for tier in settings.preload_tier_list:
+        if tier == settings.default_tier:
+            continue
+        loaded_at = time.perf_counter()
+        try:
+            registry.get(tier)
+        except RegistryError as exc:
+            logger.warning("preload of tier=%s failed: %s", tier, exc)
+        else:
+            logger.info(
+                "preloaded tier=%s in %.1fs",
+                tier,
+                time.perf_counter() - loaded_at,
+            )
+
     try:
         warm_up()
     except Exception:  # pragma: no cover - resource availability only
@@ -274,6 +294,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "labels": registry.labels,
             "allow_tier_override": active.allow_tier_override,
             "metrics_backend": metrics_backend(),
+            "calibration": registry.calibration_summary(),
         }
 
     # -- inference ---------------------------------------------------------

@@ -1,0 +1,80 @@
+name: Drift check
+
+# Weekly accuracy check on news the model has never seen. This is different from
+# CI: CI proves the code works, this proves the model still works on the world.
+#
+# Only bronze runs here, because the other tiers' artifacts are gitignored (gold
+# is 268 MB) and cannot be rebuilt on a hosted runner. To check the deployed
+# tiers, point the same script at the running service:
+#
+#   python scripts/drift_check.py --tier all --api https://your-host
+#
+# and schedule it wherever that service lives.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays, 06:00 UTC
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  unseen-data-accuracy:
+    name: Accuracy on live news (bronze)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-serve.txt
+
+      - name: Download NLTK data
+        run: |
+          python -c "import nltk; [nltk.download(p, quiet=True) for p in ['stopwords','punkt_tab','wordnet','omw-1.4']]"
+
+      - name: Train bronze tier
+        env:
+          PYTHONPATH: src
+        run: python -m newsclass.train --tier bronze
+
+      - name: Boot the API
+        env:
+          PYTHONPATH: src
+          NEWSCLASS_DEFAULT_TIER: bronze
+        run: |
+          uvicorn newsclass.app:app --host 127.0.0.1 --port 8000 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8000/healthz && break
+            sleep 2
+          done
+
+      - name: Check accuracy on today's headlines
+        env:
+          PYTHONPATH: src
+          # Optional Slack-compatible webhook; the job already fails on alert.
+          NEWSCLASS_ALERT_WEBHOOK: ${{ secrets.DRIFT_ALERT_WEBHOOK }}
+        run: |
+          python scripts/drift_check.py \
+            --tier bronze \
+            --api http://127.0.0.1:8000 \
+            --min-accuracy 0.60 \
+            --max-drop 0.12 \
+            --json-out artifacts/drift_report.json
+
+      - name: Upload the drift report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-report
+          path: artifacts/drift_report.json
+          if-no-files-found: warn

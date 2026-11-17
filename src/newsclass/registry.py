@@ -163,6 +163,14 @@ class ModelRegistry:
             )
         return described
 
+    def calibration_summary(self) -> dict[str, Any]:
+        """Confidence-calibration status for every tier that is loaded."""
+        return {
+            tier: model.calibration()
+            for tier, model in self._instances.items()
+            if hasattr(model, "calibration")
+        }
+
     def _artifact_exists(self, tier: str) -> bool:
         directory = self.artifacts_dir / tier
         markers = {
